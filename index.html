@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalimba Chill - Hợp âm và Tab nhạc đàn Kalimba</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="images/logo.jpeg" type="image/jpeg">
+    
+    <!-- Firebase App (cần thiết cho tất cả các sản phẩm của Firebase) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    
+    <!-- Thêm các SDK Firebase mà bạn muốn sử dụng -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    
+    <!-- Scripts tùy chỉnh -->
+    <script src="js/env-loader.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <div class="header-left">
+                <button class="menu-btn" id="menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <div class="header-center">
+                <h1>
+                    <img src="images/kalimba-chill-logo.jpg" alt="Kalimba Chill Logo" class="mobile-logo">
+                    <span class="logo-text"><span class="highlight">Kalimba</span> Chill</span>
+                </h1>
+            </div>
+            <div class="header-right">
+                <button class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Desktop Header -->
+        <header class="desktop-header">
+            <div class="container">
+                <div class="logo">
+                    <a href="index.html">
+                        <img src="images/kalimba-chill-logo.jpg" alt="Kalimba Chill Logo" class="desktop-logo">
+                        <span class="logo-text"><span class="highlight">Kalimba</span> Chill</span>
+                    </a>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#" class="active"><i class="fas fa-home"></i> Trang chủ</a></li>
+                        <li><a href="#donate"><i class="fas fa-hand-holding-heart"></i> Đóng góp</a></li>
+                        <li><a href="feedback.html"><i class="fas fa-comment-dots"></i> Góp ý</a></li>
+                    </ul>
+                </nav>
+                <div class="header-right">
+                    <button class="login-with-google-btn">
+                        <i class="fab fa-google"></i> Đăng nhập
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Hero Search Section -->
+        <section class="hero-search">
+            <div class="search-container">
+                <h2>Tìm hợp âm & tab nhạc đàn Kalimba cho bài hát yêu thích</h2>
+                <div class="search-box">
+                    <input type="text" placeholder="Nhập tên bài hát, ca sĩ hoặc lời bài hát...">
+                    <button><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Image Slider -->
+        <section class="image-slider">
+            <div class="slider-container">
+                <div class="slider-wrapper" id="slider-wrapper">
+                    <div class="slide">
+                        <img src="images/slider1.jpg" alt="Kalimba 1">
+                        <div class="slide-content">
+                            <h3>Khám phá đàn Kalimba</h3>
+                            <p>Học cách chơi đàn Kalimba với các bài hướng dẫn cơ bản</p>
+                        </div>
+                    </div>
+                    <div class="slide">
+                        <img src="images/slider2.jpg" alt="Kalimba 2">
+                        <div class="slide-content">
+                            <h3>Bài hát phổ biến</h3>
+                            <p>Top 10 bài hát được chơi nhiều nhất trên đàn Kalimba</p>
+                        </div>
+                    </div>
+                    <div class="slide">
+                        <img src="images/slider3.jpg" alt="Kalimba 3">
+                        <div class="slide-content">
+                            <h3>Hướng dẫn đọc Tab Kalimba</h3>
+                            <p>Các ký hiệu cơ bản trong Tab nhạc đàn Kalimba</p>
+                        </div>
+                    </div>
+                    <div class="slide">
+                        <img src="images/slider4.jpg" alt="Kalimba 4">
+                        <div class="slide-content">
+                            <h3>Luyện ngón cơ bản</h3>
+                            <p>Các bài tập giúp bạn luyện ngón hiệu quả</p>
+                        </div>
+                    </div>
+                    <div class="slide">
+                        <img src="images/slider5.jpg" alt="Kalimba 5">
+                        <div class="slide-content">
+                            <h3>Khóa học trực tuyến</h3>
+                            <p>Đăng ký khóa học Kalimba trực tuyến cùng giảng viên</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="slider-controls">
+                    <button class="prev-btn"><i class="fas fa-chevron-left"></i></button>
+                    <div class="slider-dots">
+                        <span class="dot active" data-index="0"></span>
+                        <span class="dot" data-index="1"></span>
+                        <span class="dot" data-index="2"></span>
+                        <span class="dot" data-index="3"></span>
+                        <span class="dot" data-index="4"></span>
+                    </div>
+                    <button class="next-btn"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-navigation">
+            <button class="tab-btn active"><i class="fas fa-fire"></i> Phổ biến</button>
+            <button class="tab-btn"><i class="fas fa-history"></i> Xem gần đây</button>
+            <button class="tab-btn"><i class="fas fa-heart"></i> Yêu thích</button>
+        </nav>
+
+        <main>
+            <h2 class="section-title">Danh mục hợp âm và tab</h2>
+            <div class="categories">
+                <div class="category-item">
+                    <div class="category-image" style="background-color: #f4a261;">
+                        <h2>Nhạc Vàng tuyển chọn</h2>
+                    </div>
+                    <div class="category-title">Nhạc Vàng Tuyển Chọn</div>
+                </div>
+                
+                <div class="category-item">
+                    <div class="category-image" style="background-color: #e9c46a;">
+                        <h2>NGƯỜI MỚI TẬP CHƠI</h2>
+                    </div>
+                    <div class="category-title">Người mới tập chơi</div>
+                </div>
+                
+                <div class="category-item">
+                    <div class="category-image" style="background-color: #2a9d8f;">
+                        <h2>INDIE VIỆT</h2>
+                    </div>
+                    <div class="category-title">Indie Việt</div>
+                </div>
+                
+                <div class="category-item">
+                    <div class="category-image" style="background-color: #264653;">
+                        <h2>Du Ca</h2>
+                    </div>
+                    <div class="category-title">Du Ca</div>
+                </div>
+                
+                <div class="category-item">
+                    <div class="category-image" style="background-color: #333333;">
+                        <h2>Vòng Canon</h2>
+                    </div>
+                    <div class="category-title">Vòng Canon</div>
+                </div>
+                
+                <div class="category-item">
+                    <div class="category-image" style="background-color: #e76f51;">
+                        <h2>Vòng hợp âm<br>C-G-Am-F</h2>
+                    </div>
+                    <div class="category-title">Vòng C G Am F</div>
+                </div>
+            </div>
+
+            <div class="featured-songs">
+                <h2 class="section-title">Bài hát nổi bật</h2>
+                <div class="song-grid">
+                    <div class="featured-song-item">
+                        <div class="song-thumb">
+                            <img src="images/song1.jpg" alt="Thành Phố Buồn">
+                            <div class="play-icon"><i class="fas fa-play"></i></div>
+                        </div>
+                        <div class="song-info">
+                            <h3>Thành Phố Buồn</h3>
+                            <p>Đàm Vĩnh Hưng</p>
+                        </div>
+                    </div>
+                    <div class="featured-song-item">
+                        <div class="song-thumb">
+                            <img src="images/song2.jpg" alt="Xuân Này Con Không Về">
+                            <div class="play-icon"><i class="fas fa-play"></i></div>
+                        </div>
+                        <div class="song-info">
+                            <h3>Xuân Này Con Không Về</h3>
+                            <p>Hoàng Bách</p>
+                        </div>
+                    </div>
+                    <div class="featured-song-item">
+                        <div class="song-thumb">
+                            <img src="images/song3.jpg" alt="Con Đường Xưa Em Đi">
+                            <div class="play-icon"><i class="fas fa-play"></i></div>
+                        </div>
+                        <div class="song-info">
+                            <h3>Con Đường Xưa Em Đi</h3>
+                            <p>Thanh Tuyền</p>
+                        </div>
+                    </div>
+                    <div class="featured-song-item">
+                        <div class="song-thumb">
+                            <img src="images/song4.jpg" alt="Về Đâu Mái Tóc Người Thương">
+                            <div class="play-icon"><i class="fas fa-play"></i></div>
+                        </div>
+                        <div class="song-info">
+                            <h3>Về Đâu Mái Tóc Người Thương</h3>
+                            <p>Quang Lê</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Donate Section -->
+        <section class="donate-section" id="donate">
+            <div class="section-header">
+                <h2 class="section-title">Ủng hộ phát triển Kalimba Chill</h2>
+                <p>Đóng góp của bạn sẽ giúp chúng tôi duy trì và phát triển nhiều nội dung chất lượng hơn.</p>
+            </div>
+            
+            <div class="donate-content">
+                <div class="donate-left">
+                    <div class="author-image">
+                        <img src="images/author.jpg" alt="Tác giả Kalimba Chill">
+                        <h3>Người sáng lập Kalimba Chill</h3>
+                        <p>Chúng tôi luôn cố gắng mang đến cho bạn những trải nghiệm tốt nhất với đàn Kalimba</p>
+                    </div>
+                </div>
+                
+                <div class="donate-right">
+                    <div class="donate-info">
+                        <h2>Thông tin tài khoản</h2>
+                        
+                        <div class="qr-code">
+                            <img src="images/qr-code.jpg" alt="Mã QR thanh toán">
+                            <p>Quét mã QR để chuyển khoản nhanh</p>
+                        </div>
+                        
+                        <div class="bank-info">
+                            <div class="info-item">
+                                <span class="info-label">Số tài khoản:</span>
+                                <span class="info-value">1234 5678 9012</span>
+                                <div class="copy-btn-container">
+                                    <button class="copy-btn" data-copy="1234 5678 9012">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="info-item">
+                                <span class="info-label">Ngân hàng:</span>
+                                <span class="info-value">Vietcombank - Chi nhánh Hà Nội</span>
+                            </div>
+                            
+                            <div class="info-item">
+                                <span class="info-label">Chủ tài khoản:</span>
+                                <span class="info-value">NGUYEN VAN A</span>
+                            </div>
+                            
+                            <div class="info-item">
+                                <span class="info-label">Nội dung CK:</span>
+                                <span class="info-value">Ung ho Kalimba Chill</span>
+                                <div class="copy-btn-container">
+                                    <button class="copy-btn" data-copy="Ung ho Kalimba Chill">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="thank-you-message">
+                        <h3><i class="fas fa-heart"></i> Chân thành cảm ơn sự ủng hộ của bạn!</h3>
+                        <p>Mọi đóng góp đều được ghi nhận và dùng để phát triển cộng đồng Kalimba Việt Nam.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="donate-message">
+                <div class="message-card">
+                    <h2>Vì sao cần ủng hộ Kalimba Chill?</h2>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> Duy trì máy chủ và chi phí vận hành website</li>
+                        <li><i class="fas fa-check-circle"></i> Phát triển thêm tab và hợp âm cho nhiều bài hát mới</li>
+                        <li><i class="fas fa-check-circle"></i> Cải thiện giao diện và trải nghiệm người dùng</li>
+                        <li><i class="fas fa-check-circle"></i> Xây dựng ứng dụng di động trong tương lai</li>
+                    </ul>
+                    <p>Mọi sự đóng góp, dù nhỏ hay lớn, đều có ý nghĩa đối với chúng tôi!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <div class="footer-logo-img">
+                        <img src="images/kalimba-chill-logo.jpg" alt="Kalimba Chill Logo" class="footer-logo-image">
+                    </div>
+                    <h2>Kalimba Chill</h2>
+                    <p>Website hợp âm và tab nhạc đàn Kalimba hàng đầu Việt Nam</p>
+                </div>
+                <div class="footer-links">
+                    <h3>Liên kết</h3>
+                    <ul>
+                        <li><a href="#">Trang chủ</a></li>
+                        <li><a href="#">Danh sách bài hát</a></li>
+                        <li><a href="#">Khóa học</a></li>
+                        <li><a href="#donate">Đóng góp</a></li>
+                        <li><a href="feedback.html">Góp ý</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h3>Liên hệ</h3>
+                    <p><i class="fas fa-envelope"></i> info@kalimbachill.com</p>
+                    <p><i class="fas fa-phone"></i> +84 123 456 789</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 Kalimba Chill. Tất cả các quyền được bảo lưu.</p>
+            </div>
+        </footer>
+
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="user-profile">
+                    <div class="user-avatar">
+                        <i class="fab fa-google"></i>
+                    </div>
+                    <button class="login-with-google-btn">
+                        <i class="fab fa-google"></i> Đăng nhập bằng Google
+                    </button>
+                </div>
+            </div>
+            <nav class="sidebar-menu">
+                <ul>
+                    <li><a href="#"><i class="fas fa-home"></i> Trang chủ</a></li>
+                    <li><a href="#"><i class="fas fa-music"></i> Bài hát</a></li>
+                    <li><a href="#"><i class="fas fa-book"></i> Khóa học</a></li>
+                    <li><a href="#"><i class="fas fa-list"></i> Playlist của tôi</a></li>
+                    <li><a href="#"><i class="fas fa-heart"></i> Yêu thích</a></li>
+                    <li><a href="#"><i class="fas fa-search"></i> Tìm theo hợp âm</a></li>
+                    <li><a href="#"><i class="fas fa-guitar"></i> Tra cứu hợp âm</a></li>
+                    <li><a href="#donate"><i class="fas fa-hand-holding-heart"></i> Đóng góp</a></li>
+                    <li><a href="feedback.html"><i class="fas fa-comment-dots"></i> Góp ý</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Thiết lập</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="overlay" id="overlay"></div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script>
+        // Copy to clipboard functionality
+        document.querySelectorAll('.copy-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const textToCopy = this.getAttribute('data-copy');
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    // Change icon temporarily to show success
+                    const icon = this.querySelector('i');
+                    icon.classList.remove('fa-copy');
+                    icon.classList.add('fa-check');
+                    
+                    setTimeout(() => {
+                        icon.classList.remove('fa-check');
+                        icon.classList.add('fa-copy');
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+    
+    <!-- Firebase initialization -->
+    <script type="module">
+        // Khởi tạo Firebase dựa trên cấu hình từ env-loader.js
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra xem đã tải được cấu hình chưa
+            setTimeout(() => {
+                const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
+                    apiKey: window.getEnv ? window.getEnv('FIREBASE_API_KEY') : '',
+                    authDomain: window.getEnv ? window.getEnv('FIREBASE_AUTH_DOMAIN') : '',
+                    projectId: window.getEnv ? window.getEnv('FIREBASE_PROJECT_ID') : '',
+                    storageBucket: window.getEnv ? window.getEnv('FIREBASE_STORAGE_BUCKET') : '',
+                    messagingSenderId: window.getEnv ? window.getEnv('FIREBASE_MESSAGING_SENDER_ID') : '',
+                    appId: window.getEnv ? window.getEnv('FIREBASE_APP_ID') : '',
+                    measurementId: window.getEnv ? window.getEnv('FIREBASE_MEASUREMENT_ID') : ''
+                };
+                
+                // Khởi tạo Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    
+                    // Khởi tạo Analytics
+                    if (firebaseConfig.measurementId) {
+                        firebase.analytics();
+                    }
+                    
+                    console.log('Firebase đã được khởi tạo thành công.');
+                }
+            }, 1000); // Đợi 1 giây để đảm bảo env-loader đã chạy
+        });
+    </script>
+    
+    <!-- Firebase authentication -->
+    <script type="module" src="js/firebase-auth.js"></script>
+    
+    <!-- Firestore operations -->
+    <script type="module" src="js/firestore-operations.js"></script>
+</body>
+</html> 
