@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra đăng nhập Google - Kalimba Chill</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/google-auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="images/logo.jpeg" type="image/jpeg">
+    <style>
+        .auth-test-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+        
+        .test-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .test-content {
+            margin-bottom: 20px;
+        }
+        
+        .test-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-waiting {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .user-data-display {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
+        }
+        
+        .back-link {
+            margin-top: 20px;
+            display: block;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-test-container">
+        <h1><i class="fas fa-lock"></i> Kiểm tra đăng nhập Google</h1>
+        <p>Trang này giúp bạn kiểm tra chức năng đăng nhập Google đã được tích hợp đúng cách.</p>
+        
+        <div class="test-section">
+            <div class="test-header">
+                <h2><i class="fab fa-google"></i> Trạng thái xác thực Google</h2>
+            </div>
+            <div class="test-content">
+                <p>Kiểm tra xem bạn đã đăng nhập với Google chưa.</p>
+                <div id="login-status" class="status-indicator status-waiting">
+                    <i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...
+                </div>
+                
+                <div id="user-data" class="user-data-display"></div>
+            </div>
+            <div class="test-footer">
+                <button id="test-login-btn" class="login-with-google-btn">
+                    <i class="fab fa-google"></i> Đăng nhập với Google
+                </button>
+                <button id="test-logout-btn" class="logout-btn" style="display: none;">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-header">
+                <h2><i class="fas fa-info-circle"></i> Thông tin cấu hình</h2>
+            </div>
+            <div class="test-content">
+                <p>Kiểm tra thông tin cấu hình API OAuth của bạn:</p>
+                <ul>
+                    <li><strong>Client ID:</strong> <span id="client-id">...</span></li>
+                    <li><strong>Redirect URI:</strong> <span id="redirect-uri">...</span></li>
+                    <li><strong>Scopes:</strong> <span id="scopes">...</span></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-header">
+                <h2><i class="fas fa-code"></i> Mẫu mã tích hợp</h2>
+            </div>
+            <div class="test-content">
+                <p>Đơn giản hóa việc tích hợp vào các trang khác:</p>
+                <pre><code>&lt;script src="js/google-auth.js"&gt;&lt;/script&gt;
+
+&lt;button class="login-with-google-btn" onclick="initiateGoogleLogin()"&gt;
+    &lt;i class="fab fa-google"&gt;&lt;/i&gt; Đăng nhập
+&lt;/button&gt;</code></pre>
+            </div>
+        </div>
+        
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</a>
+    </div>
+    
+    <script src="js/google-auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hiển thị thông tin cấu hình
+            if (typeof googleConfig !== 'undefined') {
+                document.getElementById('client-id').textContent = googleConfig.clientId;
+                document.getElementById('redirect-uri').textContent = googleConfig.redirectUri;
+                document.getElementById('scopes').textContent = googleConfig.scopes;
+            } else {
+                document.getElementById('client-id').textContent = 'Chưa tải được cấu hình';
+                document.getElementById('redirect-uri').textContent = 'Chưa tải được cấu hình';
+                document.getElementById('scopes').textContent = 'Chưa tải được cấu hình';
+            }
+            
+            // Kiểm tra trạng thái đăng nhập
+            const loginStatus = document.getElementById('login-status');
+            const userData = document.getElementById('user-data');
+            const testLoginBtn = document.getElementById('test-login-btn');
+            const testLogoutBtn = document.getElementById('test-logout-btn');
+            
+            // Hiển thị dữ liệu người dùng nếu đã đăng nhập
+            function displayUserInfo() {
+                const savedUser = localStorage.getItem('kalimbaUser');
+                if (savedUser) {
+                    try {
+                        const userObj = JSON.parse(savedUser);
+                        loginStatus.className = 'status-indicator status-success';
+                        loginStatus.innerHTML = '<i class="fas fa-check-circle"></i> Đã đăng nhập';
+                        
+                        // Hiển thị dữ liệu người dùng
+                        userData.style.display = 'block';
+                        userData.textContent = JSON.stringify(userObj, null, 2);
+                        
+                        // Hiển thị nút đăng xuất
+                        testLoginBtn.style.display = 'none';
+                        testLogoutBtn.style.display = 'inline-flex';
+                    } catch (e) {
+                        loginStatus.className = 'status-indicator status-error';
+                        loginStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Lỗi khi đọc dữ liệu đăng nhập';
+                    }
+                } else {
+                    loginStatus.className = 'status-indicator status-error';
+                    loginStatus.innerHTML = '<i class="fas fa-times-circle"></i> Chưa đăng nhập';
+                    userData.style.display = 'none';
+                    testLoginBtn.style.display = 'inline-flex';
+                    testLogoutBtn.style.display = 'none';
+                }
+            }
+            
+            // Kiểm tra khi trang tải xong
+            setTimeout(displayUserInfo, 1000);
+            
+            // Gán sự kiện cho nút đăng nhập
+            testLoginBtn.addEventListener('click', function() {
+                initiateGoogleLogin();
+                // Kiểm tra lại sau 2 giây
+                setTimeout(displayUserInfo, 2000);
+            });
+            
+            // Gán sự kiện cho nút đăng xuất
+            testLogoutBtn.addEventListener('click', function() {
+                logoutUser();
+                // Kiểm tra lại sau 1 giây
+                setTimeout(displayUserInfo, 1000);
+            });
+        });
+    </script>
+</body>
+</html> 
