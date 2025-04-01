@@ -37,6 +37,11 @@
     display: none; /* Sẽ được hiển thị bởi JavaScript sau khi đăng nhập */
 }
 
+/* Hiển thị menu người dùng khi hover */
+.header-right:hover .user-menu {
+    display: block;
+}
+
 .user-menu-header {
     display: flex;
     flex-direction: column;
@@ -180,4 +185,32 @@
         margin-bottom: 5px;
         text-align: center;
     }
+}
+
+/* Hiển thị avatar trên desktop */
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.header-avatar {
+    display: none; /* Sẽ được hiển thị sau khi đăng nhập */
+    cursor: pointer;
+}
+
+.header-right .user-avatar {
+    cursor: pointer;
+    margin-right: 5px;
+    position: relative;
+    margin-bottom: 0;
+}
+
+.desktop-header .user-menu {
+    position: absolute;
+    right: 0;
+    top: 50px;
+    width: 220px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    z-index: 100;
 } 

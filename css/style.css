@@ -1401,6 +1401,7 @@ main {
     padding: 1.5rem;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
+    height: 100%;
 }
 
 .author-image img {
@@ -2270,4 +2271,125 @@ main {
 
 .user-menu-item.logout i {
     color: #f44336;
+}
+
+/* Donate Section - New Styles */
+.donate-reason {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.donate-reason h2 {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 600;
+}
+
+.donate-reason ul {
+    margin-left: 5px;
+    margin-bottom: 15px;
+    flex: 1;
+}
+
+.donate-reason ul li {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.donate-reason ul li i {
+    color: #4CAF50;
+    margin-right: 10px;
+    margin-top: 3px;
+}
+
+.donate-reason p {
+    font-style: italic;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .donate-reason {
+        margin-bottom: 30px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .donate-left {
+        padding-right: 30px;
+    }
+    
+    .donate-reason {
+        margin-top: 20px;
+    }
+}
+
+/* Trường Momo */
+.momo-item {
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    border-left: 3px solid #ae2070;
+}
+
+.momo-item .info-label {
+    color: #ae2070;
+    font-weight: bold;
+}
+
+.momo-item .info-value {
+    color: #ae2070;
+    font-weight: bold;
+}
+
+.momo-icon {
+    margin-right: 5px;
+    color: #ae2070;
+}
+
+.momo-item .copy-btn {
+    background-color: transparent;
+}
+
+.momo-item .copy-btn:hover {
+    background-color: #f0f0f0;
+}
+
+/* Canh chiều cao các phần trong donate */
+@media (min-width: 768px) {
+    .donate-content {
+        display: flex;
+        align-items: stretch;
+    }
+    
+    .donate-left, .donate-right {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .author-image, .donate-reason, .donate-info {
+        height: 100%;
+    }
+    
+    .donate-info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    
+    .qr-code {
+        flex: 0 0 auto;
+    }
+    
+    .bank-info {
+        flex: 1;
+    }
 }
