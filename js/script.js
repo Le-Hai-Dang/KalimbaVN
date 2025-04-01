@@ -1,175 +1,51 @@
 // === DOM Elements ===
-const menuBtn = document.getElementById('menu-btn');
-const loginBtn = document.querySelector('.login-btn');
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('overlay');
-
-// Tab buttons in song detail page
-const tabButtons = document.querySelectorAll('.tab-controls .tab-btn');
-const chordSheet = document.querySelector('.chord-sheet');
-const kalimbaTab = document.querySelector('.kalimba-tab');
-const lyricsOnly = document.querySelector('.lyrics-only');
-
-// Tone control buttons
-const toneUpBtn = document.querySelector('.tone-up');
-const toneDownBtn = document.querySelector('.tone-down');
-const transposeBtn = document.querySelector('.transpose');
-
-// Back button
-const backBtn = document.querySelector('.back-btn');
-
-// Favorite button
-const favoriteButtons = document.querySelectorAll('.favorite-btn');
-
-// Slider elements
-const sliderWrapper = document.getElementById('slider-wrapper');
-const prevBtn = document.querySelector('.prev-btn');
-const nextBtn = document.querySelector('.next-btn');
-const dots = document.querySelectorAll('.dot');
-
-// Google login buttons
-const googleLoginButtons = document.querySelectorAll('.login-with-google-btn');
-
-// === Event Listeners ===
-// Toggle sidebar
-if (menuBtn && sidebar && overlay) {
-    menuBtn.addEventListener('click', toggleSidebar);
-    overlay.addEventListener('click', closeSidebar);
-}
-
-// Make login button also toggle sidebar on mobile
-if (loginBtn && sidebar) {
-    loginBtn.addEventListener('click', toggleSidebar);
-}
-
-// Tab controls
-if (tabButtons.length > 0) {
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => switchTab(button));
-    });
-}
-
-// Tone controls
-if (toneUpBtn) toneUpBtn.addEventListener('click', () => changeTone(1));
-if (toneDownBtn) toneDownBtn.addEventListener('click', () => changeTone(-1));
-if (transposeBtn) transposeBtn.addEventListener('click', showTransposeModal);
-
-// Back navigation
-if (backBtn) {
-    backBtn.addEventListener('click', () => {
-        window.history.back();
-    });
-}
-
-// Favorite buttons
-if (favoriteButtons.length > 0) {
-    favoriteButtons.forEach(button => {
-        button.addEventListener('click', toggleFavorite);
-    });
-}
-
-// Google login buttons
-if (googleLoginButtons.length > 0) {
-    googleLoginButtons.forEach(button => {
-        // Sử dụng firebase-auth.js
-        button.addEventListener('click', () => {
-            if (window.firebaseAuth && typeof window.firebaseAuth.handleGoogleSignIn === 'function') {
-                window.firebaseAuth.handleGoogleSignIn();
-            } else {
-                handleGoogleLogin();
-            }
-        });
-    });
-}
-
-// Slider controls
-if (sliderWrapper) {
-    let currentSlide = 0;
-    const slideCount = document.querySelectorAll('.slide').length;
-    
-    // Set up slider size
-    function setupSlider() {
-        const slides = document.querySelectorAll('.slide');
-        
-        // Update slider position
-        updateSliderPosition();
-    }
-    
-    // Update slider position based on current slide
-    function updateSliderPosition() {
-        if (sliderWrapper) {
-            sliderWrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
-            
-            // Update active dot
-            dots.forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentSlide);
-            });
-        }
-    }
-    
-    // Go to next slide
-    function nextSlide() {
-        currentSlide = (currentSlide + 1) % slideCount;
-        updateSliderPosition();
-    }
-    
-    // Go to previous slide
-    function prevSlide() {
-        currentSlide = (currentSlide - 1 + slideCount) % slideCount;
-        updateSliderPosition();
-    }
-    
-    // Go to specific slide
-    function goToSlide(index) {
-        currentSlide = index;
-        updateSliderPosition();
-    }
-    
-    // Event listeners
-    if (nextBtn) nextBtn.addEventListener('click', nextSlide);
-    if (prevBtn) prevBtn.addEventListener('click', prevSlide);
-    
-    // Dot navigation
-    dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => goToSlide(index));
-    });
-    
-    // Auto slide
-    let slideInterval = setInterval(nextSlide, 5000);
-    
-    // Pause auto slide on hover
-    if (sliderWrapper) {
-        sliderWrapper.addEventListener('mouseenter', () => {
-            clearInterval(slideInterval);
-        });
-        
-        sliderWrapper.addEventListener('mouseleave', () => {
-            slideInterval = setInterval(nextSlide, 5000);
-        });
-    }
-    
-    // Initialize slider
-    setupSlider();
-    
-    // Update slider on window resize
-    window.addEventListener('resize', setupSlider);
-}
+// Đảm bảo tham chiếu và sự kiện được đăng ký trong DOMContentLoaded
+let menuBtn;
+let loginBtn;
+let sidebar;
+let overlay;
+let tabButtons;
+let chordSheet;
+let kalimbaTab;
+let lyricsOnly;
+let toneUpBtn;
+let toneDownBtn;
+let transposeBtn;
+let backBtn;
+let favoriteButtons;
+let sliderWrapper;
+let prevBtn;
+let nextBtn;
+let dots;
+let googleLoginButtons;
 
 // === Functions ===
 // Toggle sidebar
 function toggleSidebar() {
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+        console.log('Sidebar toggled');
+    } else {
+        console.error('Sidebar or overlay elements not found');
+    }
 }
 
 // Close sidebar
 function closeSidebar() {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
+    if (sidebar && overlay) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    }
 }
 
 // Switch tab in song detail
 function switchTab(selectedButton) {
+    if (!tabButtons || tabButtons.length === 0) {
+        console.error('Tab buttons not found');
+        return;
+    }
+    
     // Update active button
     tabButtons.forEach(button => {
         button.classList.remove('active');
@@ -191,6 +67,8 @@ function switchTab(selectedButton) {
         } else if (tabIndex === 2) {
             lyricsOnly.style.display = 'block';
         }
+    } else {
+        console.error('One or more tab content elements not found');
     }
 }
 
@@ -201,9 +79,18 @@ const chords = {
 };
 
 function changeTone(semitones) {
-    if (!chordSheet) return;
+    if (!chordSheet) {
+        console.error('Chord sheet not found, cannot change tone');
+        return;
+    }
     
     const allChords = chordSheet.querySelectorAll('.chord');
+    if (!allChords || allChords.length === 0) {
+        console.log('No chords found in chord sheet');
+        return;
+    }
+    
+    console.log(`Changing tone by ${semitones} semitones`);
     
     allChords.forEach(chordElement => {
         const chordText = chordElement.textContent;
@@ -217,6 +104,7 @@ function changeTone(semitones) {
         const currentTone = toneSpan.textContent.replace('Tone: ', '');
         const newTone = transposeChord(currentTone, semitones).replace('[', '').replace(']', '');
         toneSpan.textContent = 'Tone: ' + newTone;
+        console.log(`Updated tone to: ${newTone}`);
     }
 }
 
@@ -341,121 +229,164 @@ function handleGoogleLogin() {
     alert('Chức năng đăng nhập với Google sẽ được triển khai trong tương lai.');
 }
 
-// Handle login button click
-if (document.querySelector('.login-btn')) {
-    document.querySelector('.login-btn').addEventListener('click', function() {
-        // Kiểm tra nếu có firebaseAuth
-        if (window.firebaseAuth && typeof window.firebaseAuth.handleGoogleSignIn === 'function') {
-            window.firebaseAuth.handleGoogleSignIn();
-        } else {
-            // Xử lý này sẽ được thay thế bởi toggleSidebar
-            toggleSidebar();
-        }
-    });
-}
-
 // === Initialize ===
-document.addEventListener('DOMContentLoaded', () => {
-    // Set active menu item in sidebar based on current page
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    const sidebarMenuItems = document.querySelectorAll('.sidebar-menu ul li a');
-    
-    if (sidebarMenuItems.length > 0) {
-        if (currentPage === 'index.html' || currentPage === '') {
-            // Mark "Trang chủ" as active
-            sidebarMenuItems[0].classList.add('active');
-        }
-    }
-    
-    // Link category items to songs.html
-    const categoryItems = document.querySelectorAll('.category-item');
-    if (categoryItems.length > 0) {
-        categoryItems.forEach(item => {
-            item.addEventListener('click', () => {
-                window.location.href = 'songs.html';
-            });
-        });
-    }
-    
-    // Link song items to song-detail.html
-    const songItems = document.querySelectorAll('.song-item');
-    if (songItems.length > 0) {
-        songItems.forEach(item => {
-            item.addEventListener('click', (event) => {
-                // Don't navigate if clicking the favorite button
-                if (!event.target.closest('.favorite-btn')) {
-                    window.location.href = 'song-detail.html';
-                }
-            });
-        });
-    }
 
-    // Link featured song items to song-detail.html
-    const featuredSongItems = document.querySelectorAll('.featured-song-item');
-    if (featuredSongItems.length > 0) {
-        featuredSongItems.forEach(item => {
-            item.addEventListener('click', () => {
-                window.location.href = 'song-detail.html';
-            });
-        });
-    }
-    
-    // Search form
-    const searchBox = document.querySelector('.search-box');
-    if (searchBox) {
-        const searchInput = searchBox.querySelector('input');
-        const searchButton = searchBox.querySelector('button');
-        
-        searchButton.addEventListener('click', () => {
-            const query = searchInput.value.trim();
-            if (query) {
-                // In a real app, this would navigate to search results page
-                alert(`Tìm kiếm cho: ${query}`);
-                // Example: window.location.href = `search-results.html?q=${encodeURIComponent(query)}`;
-            }
-        });
-        
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                searchButton.click();
-            }
-        });
-    }
-    
-    // Kiểm tra trạng thái đăng nhập nếu Firebase đã tải
-    if (window.firebaseAuth && typeof window.firebaseAuth.checkAuthStateOnLoad === 'function') {
-        window.firebaseAuth.checkAuthStateOnLoad();
-    }
-});
+// Slider variables and functions
+let currentSlide = 0;
+let slideCount = 0;
+let slideInterval;
 
-// Hàm kiểm tra Firebase đã được khởi tạo chưa
-function isFirebaseInitialized() {
-    return typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
+// Set up slider size
+function setupSlider() {
+    if (!sliderWrapper) {
+        console.log('Slider wrapper not found, cannot setup slider');
+        return;
+    }
+    
+    console.log('Setting up slider');
+    
+    const slides = document.querySelectorAll('.slide');
+    if (!slides || slides.length === 0) {
+        console.log('No slides found, cannot setup slider');
+        return;
+    }
+    
+    slideCount = slides.length;
+    console.log(`Found ${slideCount} slides`);
+    
+    // Update slider position
+    updateSliderPosition();
 }
 
-// Hàm chờ Firebase được khởi tạo
-function waitForFirebase(timeout = 10000) {
-    return new Promise((resolve, reject) => {
-        const startTime = Date.now();
-        
-        const checkFirebase = () => {
-            // Nếu Firebase đã khởi tạo, resolve promise
-            if (isFirebaseInitialized()) {
-                resolve(firebase);
-                return;
-            }
-            
-            // Kiểm tra timeout
-            if (Date.now() - startTime > timeout) {
-                reject(new Error('Timeout waiting for Firebase to initialize'));
-                return;
-            }
-            
-            // Kiểm tra lại sau 100ms
-            setTimeout(checkFirebase, 100);
-        };
-        
-        checkFirebase();
+// Update slider position based on current slide
+function updateSliderPosition() {
+    if (!sliderWrapper) {
+        console.log('Slider wrapper not found, cannot update position');
+        return;
+    }
+    
+    if (slideCount <= 0) {
+        console.log('No slides to position');
+        return;
+    }
+    
+    console.log('Updating slider position to slide', currentSlide);
+    
+    sliderWrapper.style.transform = `translateX(-${currentSlide * 100}%)`;
+    
+    // Update active dot
+    if (dots && dots.length > 0) {
+        dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === currentSlide);
+        });
+    }
+}
+
+// Go to next slide
+function nextSlide() {
+    if (!sliderWrapper) {
+        console.log('Slider wrapper not found, cannot go to next slide');
+        return;
+    }
+    
+    if (slideCount <= 0) {
+        console.log('No slides to navigate');
+        return;
+    }
+    
+    console.log('Going to next slide');
+    
+    currentSlide = (currentSlide + 1) % slideCount;
+    updateSliderPosition();
+}
+
+// Go to previous slide
+function prevSlide() {
+    if (!sliderWrapper) {
+        console.log('Slider wrapper not found, cannot go to previous slide');
+        return;
+    }
+    
+    if (slideCount <= 0) {
+        console.log('No slides to navigate');
+        return;
+    }
+    
+    console.log('Going to previous slide');
+    
+    currentSlide = (currentSlide - 1 + slideCount) % slideCount;
+    updateSliderPosition();
+}
+
+// Go to specific slide
+function goToSlide(index) {
+    if (!sliderWrapper) {
+        console.log('Slider wrapper not found, cannot go to specific slide');
+        return;
+    }
+    
+    if (slideCount <= 0) {
+        console.log('No slides to navigate');
+        return;
+    }
+    
+    if (index >= 0 && index < slideCount) {
+        console.log('Going to slide', index);
+        currentSlide = index;
+        updateSliderPosition();
+    } else {
+        console.log('Invalid slide index:', index);
+    }
+}
+
+// Initialize slider
+function initSlider() {
+    if (!sliderWrapper) {
+        console.log('Slider wrapper not found, skipping slider initialization');
+        return;
+    }
+    
+    // Set up slider
+    setupSlider();
+    
+    // Event listeners for slider controls
+    if (nextBtn) {
+        console.log('Next button found, setting up event listener');
+        nextBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            nextSlide();
+        });
+    }
+    
+    if (prevBtn) {
+        console.log('Previous button found, setting up event listener');
+        prevBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            prevSlide();
+        });
+    }
+    
+    // Dot navigation
+    if (dots && dots.length > 0) {
+        console.log('Dots found, setting up event listeners');
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => goToSlide(index));
+        });
+    }
+    
+    // Auto slide
+    clearInterval(slideInterval);
+    slideInterval = setInterval(nextSlide, 5000);
+    
+    console.log('Setting up hover events for slider');
+    // Pause auto slide on hover
+    sliderWrapper.addEventListener('mouseenter', () => {
+        clearInterval(slideInterval);
+    });
+    
+    sliderWrapper.addEventListener('mouseleave', () => {
+        clearInterval(slideInterval);
+        slideInterval = setInterval(nextSlide, 5000);
     });
 }
 
@@ -506,6 +437,227 @@ function showAlert(message, type = 'info', duration = 3000) {
         }, 300);
     }, duration);
 }
+
+// Hàm kiểm tra Firebase đã được khởi tạo chưa
+function isFirebaseInitialized() {
+    return typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
+}
+
+// Hàm chờ Firebase được khởi tạo
+function waitForFirebase(timeout = 10000) {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        
+        const checkFirebase = () => {
+            // Nếu Firebase đã khởi tạo, resolve promise
+            if (isFirebaseInitialized()) {
+                resolve(firebase);
+                return;
+            }
+            
+            // Kiểm tra timeout
+            if (Date.now() - startTime > timeout) {
+                reject(new Error('Timeout waiting for Firebase to initialize'));
+                return;
+            }
+            
+            // Kiểm tra lại sau 100ms
+            setTimeout(checkFirebase, 100);
+        };
+        
+        checkFirebase();
+    });
+}
+
+// Initialize all DOM elements and event listeners
+function initElements() {
+    console.log('Initializing elements');
+    
+    // Get DOM elements
+    menuBtn = document.getElementById('menu-btn');
+    loginBtn = document.querySelector('.login-btn');
+    sidebar = document.getElementById('sidebar');
+    overlay = document.getElementById('overlay');
+    tabButtons = document.querySelectorAll('.tab-controls .tab-btn');
+    chordSheet = document.querySelector('.chord-sheet');
+    kalimbaTab = document.querySelector('.kalimba-tab');
+    lyricsOnly = document.querySelector('.lyrics-only');
+    toneUpBtn = document.querySelector('.tone-up');
+    toneDownBtn = document.querySelector('.tone-down');
+    transposeBtn = document.querySelector('.transpose');
+    backBtn = document.querySelector('.back-btn');
+    favoriteButtons = document.querySelectorAll('.favorite-btn');
+    sliderWrapper = document.getElementById('slider-wrapper');
+    prevBtn = document.querySelector('.prev-btn');
+    nextBtn = document.querySelector('.next-btn');
+    dots = document.querySelectorAll('.dot');
+    googleLoginButtons = document.querySelectorAll('.login-with-google-btn');
+    
+    // Log element status
+    console.log('Menu button found:', !!menuBtn);
+    console.log('Sidebar found:', !!sidebar);
+    console.log('Slider wrapper found:', !!sliderWrapper);
+    console.log('Tab buttons found:', tabButtons ? tabButtons.length : 0);
+    console.log('Favorite buttons found:', favoriteButtons ? favoriteButtons.length : 0);
+    
+    // Toggle sidebar
+    if (menuBtn && sidebar && overlay) {
+        console.log('Setting up menu button event');
+        menuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Menu button clicked');
+            toggleSidebar();
+        });
+        
+        overlay.addEventListener('click', closeSidebar);
+    }
+    
+    // Make login button also toggle sidebar on mobile
+    if (loginBtn && sidebar) {
+        loginBtn.addEventListener('click', toggleSidebar);
+    }
+    
+    // Tab controls
+    if (tabButtons && tabButtons.length > 0) {
+        console.log('Setting up tab button events');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => switchTab(button));
+        });
+    }
+    
+    // Tone controls
+    if (toneUpBtn) toneUpBtn.addEventListener('click', () => changeTone(1));
+    if (toneDownBtn) toneDownBtn.addEventListener('click', () => changeTone(-1));
+    if (transposeBtn) transposeBtn.addEventListener('click', showTransposeModal);
+    
+    // Back navigation
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            window.history.back();
+        });
+    }
+    
+    // Favorite buttons
+    if (favoriteButtons && favoriteButtons.length > 0) {
+        console.log('Setting up favorite button events');
+        favoriteButtons.forEach(button => {
+            button.addEventListener('click', toggleFavorite);
+        });
+    }
+    
+    // Google login buttons
+    if (googleLoginButtons && googleLoginButtons.length > 0) {
+        console.log('Setting up Google login button events');
+        googleLoginButtons.forEach(button => {
+            // Sử dụng firebase-auth.js
+            button.addEventListener('click', () => {
+                if (window.firebaseAuth && typeof window.firebaseAuth.handleGoogleSignIn === 'function') {
+                    window.firebaseAuth.handleGoogleSignIn();
+                } else {
+                    handleGoogleLogin();
+                }
+            });
+        });
+    }
+    
+    // Initialize slider if present
+    if (sliderWrapper) {
+        console.log('Initializing slider');
+        initSlider();
+    }
+    
+    // Set active menu item in sidebar based on current page
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+    const sidebarMenuItems = document.querySelectorAll('.sidebar-menu ul li a');
+    
+    if (sidebarMenuItems && sidebarMenuItems.length > 0) {
+        console.log('Setting up sidebar menu items');
+        sidebarMenuItems.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && (href === currentPage || (currentPage === 'index.html' && href === '/'))) {
+                link.classList.add('active');
+            }
+        });
+    }
+    
+    // Link category items to songs.html
+    const categoryItems = document.querySelectorAll('.category-item');
+    if (categoryItems && categoryItems.length > 0) {
+        console.log('Setting up category item events');
+        categoryItems.forEach(item => {
+            item.addEventListener('click', () => {
+                window.location.href = 'songs.html';
+            });
+        });
+    }
+    
+    // Link song items to song-detail.html
+    const songItems = document.querySelectorAll('.song-item');
+    if (songItems && songItems.length > 0) {
+        console.log('Setting up song item events');
+        songItems.forEach(item => {
+            item.addEventListener('click', (event) => {
+                // Don't navigate if clicking the favorite button
+                if (!event.target.closest('.favorite-btn')) {
+                    window.location.href = 'song-detail.html';
+                }
+            });
+        });
+    }
+    
+    // Link featured song items to song-detail.html
+    const featuredSongItems = document.querySelectorAll('.featured-song-item');
+    if (featuredSongItems && featuredSongItems.length > 0) {
+        console.log('Setting up featured song item events');
+        featuredSongItems.forEach(item => {
+            item.addEventListener('click', () => {
+                window.location.href = 'song-detail.html';
+            });
+        });
+    }
+    
+    // Search form
+    const searchBox = document.querySelector('.search-box');
+    if (searchBox) {
+        const searchInput = searchBox.querySelector('input');
+        const searchButton = searchBox.querySelector('button');
+        
+        if (searchButton && searchInput) {
+            console.log('Setting up search form events');
+            searchButton.addEventListener('click', () => {
+                const query = searchInput.value.trim();
+                if (query) {
+                    // In a real app, this would navigate to search results page
+                    alert(`Tìm kiếm cho: ${query}`);
+                    // Example: window.location.href = `search-results.html?q=${encodeURIComponent(query)}`;
+                }
+            });
+            
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchButton.click();
+                }
+            });
+        }
+    }
+    
+    // Kiểm tra trạng thái đăng nhập nếu Firebase đã tải
+    if (window.firebaseAuth && typeof window.firebaseAuth.checkAuthStateOnLoad === 'function') {
+        window.firebaseAuth.checkAuthStateOnLoad();
+    }
+}
+
+// Initialize on DOM content loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM content loaded');
+    initElements();
+    
+    // Update slider on window resize if exists
+    if (sliderWrapper) {
+        window.addEventListener('resize', setupSlider);
+        console.log('Added resize listener for slider');
+    }
+});
 
 // Thay thế export với window object để sử dụng trong môi trường browser
 window.firebaseUtils = {
