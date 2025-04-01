@@ -3,17 +3,17 @@
 // Tạo đối tượng lưu trữ biến môi trường
 window.ENV = window.ENV || {};
 
-// Hàm khởi tạo biến môi trường - Thay đổi thông tin này thành cấu hình Firebase thực tế
+// Hàm khởi tạo biến môi trường - Cấu hình Firebase thực tế
 function initializeEnv() {
-  // Đặt cấu hình Firebase của bạn trực tiếp vào đây
+  // Đặt cấu hình Firebase thực tế
   window.ENV = {
-    FIREBASE_API_KEY: "YOUR_API_KEY",
-    FIREBASE_AUTH_DOMAIN: "YOUR_AUTH_DOMAIN",
-    FIREBASE_PROJECT_ID: "YOUR_PROJECT_ID",
-    FIREBASE_STORAGE_BUCKET: "YOUR_STORAGE_BUCKET",
-    FIREBASE_MESSAGING_SENDER_ID: "YOUR_MESSAGING_SENDER_ID",
-    FIREBASE_APP_ID: "YOUR_APP_ID",
-    FIREBASE_MEASUREMENT_ID: "YOUR_MEASUREMENT_ID"
+    FIREBASE_API_KEY: "AIzaSyBP5o1qm-zRADjN4QoQGwNkwhjFaDj40vo",
+    FIREBASE_AUTH_DOMAIN: "project-847603826023.firebaseapp.com",
+    FIREBASE_PROJECT_ID: "project-847603826023",
+    FIREBASE_STORAGE_BUCKET: "project-847603826023.appspot.com",
+    FIREBASE_MESSAGING_SENDER_ID: "847603826023",
+    FIREBASE_APP_ID: "1:847603826023:web:8a237d2151173ac67a99f9",
+    FIREBASE_MEASUREMENT_ID: "G-9BZC49X07N"
   };
   
   console.log('Cấu hình Firebase đã được khởi tạo.');

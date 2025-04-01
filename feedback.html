@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="images/logo.jpeg" type="image/jpeg">
     
+    <!-- Script để xóa bộ nhớ cache -->
+    <script src="js/clear-cache.js"></script>
+    <script src="js/auth-watchdog.js"></script>
+    <script src="js/auth-login-helper.js"></script>
+    <script src="js/error-handler.js"></script>
+    <script src="js/firebase-constants.js"></script>
+    
     <!-- Firebase App (cần thiết cho tất cả các sản phẩm của Firebase) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     
@@ -18,8 +25,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
     
     <!-- Scripts tùy chỉnh -->
-    <script src="js/env-loader.js"></script>
-    <script src="js/firebase-config.js"></script>
     <script src="js/firebase-auth.js"></script>
     <script src="js/firestore-operations.js"></script>
     <script src="js/script.js"></script>
@@ -273,23 +278,20 @@
     
     <!-- Firebase initialization -->
     <script>
-        // Khởi tạo Firebase dựa trên cấu hình từ env-loader.js
+        // Khởi tạo Firebase với cấu hình từ firebase-constants.js
         document.addEventListener('DOMContentLoaded', function() {
-            // Không cần đợi quá lâu vì env-loader.js đã cung cấp giá trị trực tiếp
-            const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
-                apiKey: "AIzaSyBZvwZYBGhkbWI-GWZ5iXYJ69oAjqPzjhc",
-                authDomain: "kalimbavn-6a518.firebaseapp.com",
-                projectId: "kalimbavn-6a518",
-                storageBucket: "kalimbavn-6a518.appspot.com",
-                messagingSenderId: "775544917341",
-                appId: "1:775544917341:web:b9ce65f7175ca70f97c40d",
-                measurementId: "G-YT9S69HRHW"
-            };
+            // Lấy cấu hình từ firebase-constants.js
+            const firebaseConfig = window.getFirebaseConfig();
             
-            // Khởi tạo Firebase
+            // Khởi tạo Firebase nếu chưa được khởi tạo
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
-                console.log('Firebase đã được khởi tạo thành công.');
+                console.log('Firebase đã được khởi tạo thành công từ firebase-constants.js');
+                
+                // Khởi tạo Analytics nếu có id
+                if (firebaseConfig.measurementId) {
+                    firebase.analytics();
+                }
             }
         });
     </script>

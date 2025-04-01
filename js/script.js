@@ -225,8 +225,201 @@ async function toggleFavorite(event) {
 
 // Handle Google login
 function handleGoogleLogin() {
-    // Fallback cho chức năng đăng nhập
-    alert('Chức năng đăng nhập với Google sẽ được triển khai trong tương lai.');
+    console.log('Bắt đầu quá trình đăng nhập từ script.js');
+    
+    // Sử dụng duy nhất firebase-auth.js để xử lý đăng nhập
+    if (window.firebaseAuth && typeof window.firebaseAuth.handleGoogleSignIn === 'function') {
+        window.firebaseAuth.handleGoogleSignIn();
+        return;
+    }
+    
+    // Fallback nếu không có firebase-auth.js
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+        console.error('Firebase chưa được khởi tạo');
+        showAlert('Không thể kết nối đến dịch vụ đăng nhập. Vui lòng thử lại sau', 'error');
+        return;
+    }
+    
+    showAlert('Hệ thống đăng nhập đang bị lỗi. Vui lòng làm mới trang và thử lại.', 'error');
+}
+
+// Cập nhật giao diện khi đăng nhập/đăng xuất
+function updateUserInterface(user) {
+    const loginButtons = document.querySelectorAll('.login-with-google-btn');
+    const userAvatars = document.querySelectorAll('.user-avatar');
+    const mobileLoginBtn = document.querySelector('.login-btn');
+    const userMenu = document.getElementById('user-menu');
+    const userNameElement = userMenu ? userMenu.querySelector('.user-name') : null;
+    const userEmailElement = userMenu ? userMenu.querySelector('.user-email') : null;
+    
+    if (user) {
+        // Người dùng đã đăng nhập
+        loginButtons.forEach(button => {
+            button.innerHTML = `<i class="fas fa-user-circle"></i> ${user.displayName || 'Người dùng'}`;
+            
+            // Cập nhật sự kiện click để hiển thị menu người dùng
+            button.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleUserMenu();
+            };
+        });
+        
+        userAvatars.forEach(avatar => {
+            if (user.photoURL) {
+                avatar.innerHTML = `<img src="${user.photoURL}" alt="Avatar" class="user-photo">`;
+            } else {
+                avatar.innerHTML = `<i class="fas fa-user-circle"></i>`;
+            }
+        });
+        
+        if (mobileLoginBtn) {
+            mobileLoginBtn.innerHTML = `<i class="fas fa-user-circle"></i>`;
+            
+            // Cập nhật sự kiện click cho nút mobile
+            mobileLoginBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleUserMenu();
+            };
+        }
+        
+        // Cập nhật thông tin trong menu người dùng
+        if (userNameElement) {
+            userNameElement.textContent = user.displayName || 'Người dùng';
+        }
+        
+        if (userEmailElement) {
+            userEmailElement.textContent = user.email || '';
+        }
+        
+        // Thêm các mục menu chỉ hiển thị khi đã đăng nhập (nếu có)
+        const userOnlyMenuItems = document.querySelectorAll('.user-only-menu-item');
+        userOnlyMenuItems.forEach(item => {
+            item.style.display = 'flex';
+        });
+        
+        // Cập nhật nút đăng xuất
+        const logoutButton = document.querySelector('.user-menu-item.logout');
+        if (logoutButton) {
+            logoutButton.textContent = 'Đăng xuất';
+            logoutButton.href = '#';
+            logoutButton.onclick = function(e) {
+                e.preventDefault();
+                
+                if (window.firebaseAuth && typeof window.firebaseAuth.handleSignOut === 'function') {
+                    window.firebaseAuth.handleSignOut();
+                } else if (typeof firebase !== 'undefined') {
+                    firebase.auth().signOut().then(() => {
+                        console.log('Đăng xuất thành công');
+                        updateUserInterface(null);
+                    }).catch(error => {
+                        console.error('Lỗi đăng xuất:', error);
+                    });
+                }
+                
+                hideUserMenu();
+            };
+        }
+    } else {
+        // Người dùng chưa đăng nhập
+        loginButtons.forEach(button => {
+            button.innerHTML = `<i class="fab fa-google"></i> Đăng nhập`;
+            
+            // Cập nhật sự kiện click để đăng nhập
+            button.onclick = handleGoogleLogin;
+        });
+        
+        userAvatars.forEach(avatar => {
+            avatar.innerHTML = `<i class="fab fa-google"></i>`;
+        });
+        
+        if (mobileLoginBtn) {
+            mobileLoginBtn.innerHTML = `<i class="fas fa-sign-in-alt"></i>`;
+            
+            // Cập nhật sự kiện click cho nút mobile
+            mobileLoginBtn.onclick = handleGoogleLogin;
+        }
+        
+        // Cập nhật thông tin trong menu người dùng
+        if (userNameElement) {
+            userNameElement.textContent = 'Chưa đăng nhập';
+        }
+        
+        if (userEmailElement) {
+            userEmailElement.textContent = '';
+        }
+        
+        // Ẩn các mục menu chỉ hiển thị khi đã đăng nhập
+        const userOnlyMenuItems = document.querySelectorAll('.user-only-menu-item');
+        userOnlyMenuItems.forEach(item => {
+            item.style.display = 'none';
+        });
+        
+        // Cập nhật nút đăng xuất thành đăng nhập
+        const logoutButton = document.querySelector('.user-menu-item.logout');
+        if (logoutButton) {
+            logoutButton.textContent = 'Đăng nhập với Google';
+            logoutButton.href = '#';
+            logoutButton.onclick = function(e) {
+                e.preventDefault();
+                handleGoogleLogin();
+                hideUserMenu();
+            };
+        }
+    }
+}
+
+// Hiển thị menu người dùng
+function toggleUserMenu() {
+    const userMenu = document.getElementById('user-menu');
+    if (userMenu) {
+        userMenu.classList.toggle('active');
+        
+        // Thêm sự kiện click bên ngoài để đóng menu
+        if (userMenu.classList.contains('active')) {
+            document.addEventListener('click', closeUserMenuOnOutsideClick);
+        } else {
+            document.removeEventListener('click', closeUserMenuOnOutsideClick);
+        }
+    }
+}
+
+// Ẩn menu người dùng
+function hideUserMenu() {
+    const userMenu = document.getElementById('user-menu');
+    if (userMenu) {
+        userMenu.classList.remove('active');
+        document.removeEventListener('click', closeUserMenuOnOutsideClick);
+    }
+}
+
+// Đóng menu người dùng khi click bên ngoài
+function closeUserMenuOnOutsideClick(event) {
+    const userMenu = document.getElementById('user-menu');
+    const loginButtons = document.querySelectorAll('.login-with-google-btn');
+    const mobileLoginBtn = document.querySelector('.login-btn');
+    
+    // Kiểm tra xem click có phải bên trong menu hoặc nút đăng nhập không
+    let isClickInside = false;
+    
+    if (userMenu && userMenu.contains(event.target)) {
+        isClickInside = true;
+    }
+    
+    loginButtons.forEach(button => {
+        if (button.contains(event.target)) {
+            isClickInside = true;
+        }
+    });
+    
+    if (mobileLoginBtn && mobileLoginBtn.contains(event.target)) {
+        isClickInside = true;
+    }
+    
+    if (!isClickInside && userMenu) {
+        hideUserMenu();
+    }
 }
 
 // === Initialize ===
@@ -547,18 +740,17 @@ function initElements() {
     
     // Google login buttons
     if (googleLoginButtons && googleLoginButtons.length > 0) {
-        console.log('Setting up Google login button events');
-        googleLoginButtons.forEach(button => {
-            // Sử dụng firebase-auth.js
-            button.addEventListener('click', () => {
-                if (window.firebaseAuth && typeof window.firebaseAuth.handleGoogleSignIn === 'function') {
-                    window.firebaseAuth.handleGoogleSignIn();
-                } else {
-                    handleGoogleLogin();
-                }
-            });
-        });
+        console.log('Sử dụng firebase-auth.js để thiết lập các nút đăng nhập');
+        // Gọi đến firebase-auth.js để thiết lập các nút đăng nhập
+        if (window.firebaseAuth && typeof window.firebaseAuth.setupAuthButtons === 'function') {
+            // Chờ một chút để đảm bảo DOM đã sẵn sàng
+            setTimeout(() => {
+                window.firebaseAuth.setupAuthButtons();
+            }, 100);
+        }
     }
+    
+    // Mobile login button không cần thiết lập ở đây nữa vì đã được xử lý bởi firebase-auth.js
     
     // Initialize slider if present
     if (sliderWrapper) {
@@ -643,7 +835,22 @@ function initElements() {
     
     // Kiểm tra trạng thái đăng nhập nếu Firebase đã tải
     if (window.firebaseAuth && typeof window.firebaseAuth.checkAuthStateOnLoad === 'function') {
+        console.log('Sử dụng firebase-auth.js để kiểm tra trạng thái đăng nhập');
         window.firebaseAuth.checkAuthStateOnLoad();
+    } else {
+        console.log('Sử dụng cách dự phòng để kiểm tra trạng thái đăng nhập');
+        // Phương thức dự phòng
+        waitForFirebase(5000)
+            .then(firebase => {
+                console.log('Firebase đã được khởi tạo, kiểm tra xác thực');
+                firebase.auth().onAuthStateChanged(user => {
+                    console.log('Trạng thái người dùng:', user ? 'đã đăng nhập' : 'chưa đăng nhập');
+                    updateUserInterface(user);
+                });
+            })
+            .catch(error => {
+                console.error('Không thể khởi tạo Firebase:', error);
+            });
     }
 }
 

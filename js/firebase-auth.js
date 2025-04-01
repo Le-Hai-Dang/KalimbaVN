@@ -1,5 +1,50 @@
 // Xử lý xác thực người dùng với Firebase
 
+// Biến toàn cục để đánh dấu trạng thái đăng nhập
+window.authProcessRunning = false;
+
+// Chỉ cho phép một quá trình xác thực chạy tại một thời điểm
+function runSingleAuthProcess(callback) {
+  if (window.authProcessRunning) {
+    console.log('Có quá trình xác thực đang chạy, bỏ qua yêu cầu mới');
+    return Promise.resolve(null);
+  }
+  
+  // Đặt biến cờ trạng thái
+  window.authProcessRunning = true;
+  console.log('Bắt đầu quá trình xác thực mới');
+  
+  // Ghi lại thời gian bắt đầu
+  window.authStartTime = Date.now();
+  
+  return new Promise((resolve, reject) => {
+    // Đặt timeout để đảm bảo biến cờ sẽ được đặt lại ngay cả khi có lỗi không xử lý được
+    const timeoutId = setTimeout(() => {
+      console.log('Timeout: Đặt lại biến cờ sau 10 giây');
+      window.authProcessRunning = false;
+    }, 10000);
+    
+    try {
+      // Gọi callback được cung cấp
+      callback()
+        .then(result => {
+          clearTimeout(timeoutId);
+          window.authProcessRunning = false;
+          resolve(result);
+        })
+        .catch(error => {
+          clearTimeout(timeoutId);
+          window.authProcessRunning = false;
+          reject(error);
+        });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      window.authProcessRunning = false;
+      reject(error);
+    }
+  });
+}
+
 // Hàm truy cập auth
 function auth() {
   // Kiểm tra xem Firebase đã được khởi tạo chưa
@@ -10,64 +55,71 @@ function auth() {
 }
 
 function signInWithGoogle() {
-  // Ưu tiên sử dụng window.firebaseApp nếu có
-  if (window.firebaseApp && typeof window.firebaseApp.signInWithGoogle === 'function') {
-    return window.firebaseApp.signInWithGoogle();
-  }
-
-  const authInstance = auth();
-  if (!authInstance) {
-    throw new Error("Firebase Auth không được khởi tạo");
-  }
-  
-  const provider = new firebase.auth.GoogleAuthProvider();
-  return authInstance.signInWithPopup(provider)
-    .then(result => result.user)
-    .catch(error => {
-      console.error("Lỗi đăng nhập với Google:", error);
-      throw error;
+  return runSingleAuthProcess(() => {
+    const authInstance = auth();
+    if (!authInstance) {
+      console.error("Firebase Auth không được khởi tạo");
+      return Promise.reject(new Error("Firebase Auth không được khởi tạo"));
+    }
+    
+    // Xóa bộ nhớ đệm của tiến trình xác thực trước đó
+    try {
+      authInstance.signOut().catch(() => {});
+    } catch (e) {
+      console.log("Không thể đăng xuất trước khi đăng nhập lại:", e);
+    }
+    
+    // Sử dụng signInWithRedirect để tránh vấn đề popup
+    console.log('Đăng nhập sử dụng Firebase Redirect');
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: 'select_account'
     });
+    
+    // Lưu URL hiện tại để quay lại sau khi đăng nhập
+    localStorage.setItem('auth_redirect_url', window.location.href);
+    
+    // Luôn sử dụng redirect để tránh lỗi popup và Cross-Origin
+    return authInstance.signInWithRedirect(provider)
+      .then(() => {
+        // Redirect sẽ chuyển hướng đến trang đăng nhập Google, 
+        // không có giá trị trả về trực tiếp
+        return null;
+      })
+      .catch(error => {
+        console.error("Lỗi đăng nhập với Google (redirect):", error);
+        window.authProcessRunning = false;
+        throw error;
+      });
+  });
 }
 
 function signOut() {
-  // Ưu tiên sử dụng window.firebaseApp nếu có
-  if (window.firebaseApp && typeof window.firebaseApp.signOut === 'function') {
-    return window.firebaseApp.signOut();
-  }
-
-  const authInstance = auth();
-  if (!authInstance) {
-    throw new Error("Firebase Auth không được khởi tạo");
-  }
-  
-  return authInstance.signOut()
-    .catch(error => {
-      console.error("Lỗi đăng xuất:", error);
-      throw error;
-    });
+  return runSingleAuthProcess(() => {
+    const authInstance = auth();
+    if (!authInstance) {
+      return Promise.reject(new Error("Firebase Auth không được khởi tạo"));
+    }
+    
+    return authInstance.signOut()
+      .catch(error => {
+        console.error("Lỗi đăng xuất:", error);
+        throw error;
+      });
+  });
 }
 
 function getCurrentUser() {
-  // Ưu tiên sử dụng window.firebaseApp nếu có
-  if (window.firebaseApp && typeof window.firebaseApp.getCurrentUser === 'function') {
-    return window.firebaseApp.getCurrentUser();
-  }
-
   const authInstance = auth();
   if (!authInstance) {
     return Promise.resolve(null);
   }
   
-  return new Promise((resolve, reject) => {
-    const unsubscribe = authInstance.onAuthStateChanged(user => {
-      unsubscribe();
-      resolve(user);
-    }, reject);
-  });
+  return Promise.resolve(authInstance.currentUser);
 }
 
 function saveUserToFirestore(user) {
-  if (!user) return;
+  if (!user) return Promise.resolve();
 
   try {
     const userData = {
@@ -78,18 +130,16 @@ function saveUserToFirestore(user) {
       lastLogin: new Date().toISOString()
     };
     
-    // Ưu tiên sử dụng window.firebaseApp nếu có
-    if (window.firebaseApp && typeof window.firebaseApp.saveToFirestore === 'function') {
-      window.firebaseApp.saveToFirestore('users', user.uid, userData)
-        .then(() => console.log('Đã lưu thông tin người dùng vào Firestore'))
-        .catch(error => console.error('Lỗi khi lưu thông tin người dùng:', error));
-    } else if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-      firebase.firestore().collection('users').doc(user.uid).set(userData, { merge: true })
+    if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+      return firebase.firestore().collection('users').doc(user.uid).set(userData, { merge: true })
         .then(() => console.log('Đã lưu thông tin người dùng vào Firestore'))
         .catch(error => console.error('Lỗi khi lưu thông tin người dùng:', error));
     }
+    
+    return Promise.resolve();
   } catch (error) {
     console.error('Lỗi khi lưu thông tin người dùng:', error);
+    return Promise.resolve();
   }
 }
 
@@ -164,7 +214,20 @@ async function handleGoogleSignIn() {
     console.log('Đăng nhập thành công');
   } catch (error) {
     console.error('Lỗi đăng nhập:', error);
-    alert('Đăng nhập không thành công: ' + error.message);
+    
+    // Sử dụng công cụ xử lý lỗi mới nếu có
+    if (window.firebaseDebug && typeof window.firebaseDebug.handleAuthError === 'function') {
+      window.firebaseDebug.handleAuthError(error);
+    } else if (typeof window.firebaseUtils !== 'undefined' && typeof window.firebaseUtils.showAlert === 'function') {
+      window.firebaseUtils.showAlert('Đăng nhập không thành công: ' + error.message, 'error');
+    } else {
+      alert('Đăng nhập không thành công: ' + (error.message || 'Vui lòng thử lại sau'));
+    }
+    
+    // Thử kiểm tra cấu hình để phát hiện vấn đề
+    if (window.firebaseDebug && typeof window.firebaseDebug.checkConfig === 'function') {
+      window.firebaseDebug.checkConfig();
+    }
   }
 }
 
@@ -179,8 +242,28 @@ async function handleSignOut() {
   }
 }
 
+// Xóa tất cả các event listener hiện có
+function removeAllAuthEventListeners() {
+  const loginButtons = document.querySelectorAll('.login-with-google-btn');
+  loginButtons.forEach(button => {
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+  });
+  
+  const mobileLoginBtn = document.querySelector('.login-btn');
+  if (mobileLoginBtn) {
+    const newMobileBtn = mobileLoginBtn.cloneNode(true);
+    mobileLoginBtn.parentNode.replaceChild(newMobileBtn, mobileLoginBtn);
+  }
+}
+
 // Thêm sự kiện click cho các nút đăng nhập/đăng xuất
 function setupAuthButtons() {
+  // Xóa tất cả event listener trước khi thiết lập
+  removeAllAuthEventListeners();
+  
+  console.log('Thiết lập sự kiện cho nút đăng nhập từ firebase-auth.js');
+  
   // Các nút đăng nhập bằng Google
   const loginButtons = document.querySelectorAll('.login-with-google-btn');
   loginButtons.forEach(button => {
@@ -193,10 +276,26 @@ function setupAuthButtons() {
     });
   });
 
+  // Nút đăng nhập chính trên trang nếu tồn tại
+  const mainLoginBtn = document.getElementById('main-login-btn');
+  if (mainLoginBtn) {
+    console.log('Đã tìm thấy nút đăng nhập chính');
+    mainLoginBtn.addEventListener('click', () => {
+      if (currentUser) {
+        handleSignOut();
+      } else {
+        handleGoogleSignIn();
+      }
+    });
+  }
+
   // Nút đăng nhập mobile
   const mobileLoginBtn = document.querySelector('.login-btn');
   if (mobileLoginBtn) {
-    mobileLoginBtn.addEventListener('click', () => {
+    mobileLoginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation(); // Ngăn sự kiện lan ra sidebar toggle
+      
       if (currentUser) {
         handleSignOut();
       } else {
@@ -206,9 +305,59 @@ function setupAuthButtons() {
   }
 }
 
+// Thêm hàm mới để kiểm tra kết quả từ redirect
+function checkRedirectResult() {
+  const authInstance = auth();
+  if (!authInstance) {
+    return Promise.resolve(null);
+  }
+  
+  return authInstance.getRedirectResult()
+    .then(result => {
+      if (result.user) {
+        console.log('Đăng nhập thành công qua redirect');
+        
+        // Khôi phục URL trước khi chuyển hướng nếu có
+        const redirectUrl = localStorage.getItem('auth_redirect_url');
+        if (redirectUrl && redirectUrl !== window.location.href) {
+          console.log('Chuyển hướng về trang trước khi đăng nhập: ' + redirectUrl);
+          // Xóa URL đã lưu
+          localStorage.removeItem('auth_redirect_url');
+          // Chuyển hướng về trang trước
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 500);
+        }
+        
+        return result.user;
+      }
+      return null;
+    })
+    .catch(error => {
+      console.error('Lỗi khi xác thực redirect:', error);
+      // Xử lý theo loại lỗi
+      if (error.code === 'auth/credential-already-in-use') {
+        alert('Tài khoản này đã được liên kết với người dùng khác.');
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        alert('Email này đã được sử dụng với phương thức đăng nhập khác.');
+      } else if (error.code === 'auth/auth-domain-config-required') {
+        alert('Cấu hình domain cho xác thực chưa đúng. Vui lòng liên hệ quản trị viên.');
+      }
+      return null;
+    });
+}
+
 // Kiểm tra trạng thái đăng nhập khi tải trang
 async function checkAuthStateOnLoad() {
   try {
+    // Kiểm tra kết quả từ redirect trước
+    const redirectUser = await checkRedirectResult();
+    if (redirectUser) {
+      currentUser = redirectUser;
+      updateUIForAuthState(redirectUser);
+      return;
+    }
+    
     const user = await getCurrentUser();
     currentUser = user;
     updateUIForAuthState(user);
@@ -219,14 +368,13 @@ async function checkAuthStateOnLoad() {
 
 // Khởi tạo khi tài liệu được tải
 document.addEventListener('DOMContentLoaded', () => {
-  // Đảm bảo Firebase được khởi tạo trước
-  if (window.firebaseApp && typeof window.firebaseApp.init === 'function') {
-    window.firebaseApp.init();
-  }
+  console.log("Khởi tạo firebase-auth.js");
   
-  initializeAuthListener();
-  setupAuthButtons();
-  checkAuthStateOnLoad();
+  setTimeout(() => {
+    initializeAuthListener();
+    setupAuthButtons();
+    checkAuthStateOnLoad();
+  }, 500); // Chờ 500ms để đảm bảo các script khác đã chạy
 });
 
 // Xuất các hàm để có thể sử dụng từ bên ngoài
@@ -236,5 +384,7 @@ window.firebaseAuth = {
   getCurrentUser,
   handleGoogleSignIn,
   handleSignOut,
-  checkAuthStateOnLoad
+  checkAuthStateOnLoad,
+  setupAuthButtons,
+  checkRedirectResult
 }; 

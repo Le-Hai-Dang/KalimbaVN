@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" href="images/logo.jpeg" type="image/jpeg">
     
+    <!-- Script để xóa bộ nhớ cache -->
+    <script src="js/clear-cache.js"></script>
+    <script src="js/auth-watchdog.js"></script>
+    <script src="js/auth-login-helper.js"></script>
+    <script src="js/error-handler.js"></script>
+    <script src="js/firebase-constants.js"></script>
+    
     <!-- Firebase App (cần thiết cho tất cả các sản phẩm của Firebase) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     
@@ -18,8 +25,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
     
     <!-- Scripts tùy chỉnh -->
-    <script src="js/env-loader.js"></script>
-    <script src="js/firebase-config.js"></script>
     <script src="js/firebase-auth.js"></script>
     <script src="js/firestore-operations.js"></script>
     <script src="js/script.js"></script>
@@ -50,117 +55,25 @@
 
         <main class="song-list">
             <div class="list-header">
-                <h2>Thành Phố Buồn</h2>
-                <p>Đàm Vĩnh Hưng</p>
+                <h2>Danh mục bài hát</h2>
+                <p>Tải dữ liệu từ Firebase</p>
             </div>
             
             <ul class="songs">
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">1. Thành phố [Em]nào nhớ không [G]em Nơi chúng...</div>
-                        <div class="song-artist">Đàm Vĩnh Hưng</div>
+                <!-- Phần tử tải mặc định, sẽ được thay thế bằng dữ liệu thật từ Firebase -->
+                <li class="loading-item">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Đang tải danh sách bài hát...</span>
                     </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
                 </li>
                 
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Xuân Này Con Không Về</div>
-                        <div class="song-artist">Hoàng Bách</div>
-                        <div class="song-chord">Con biết bây giờ mẹ chờ tin [C] con [G/B]...Khi thấu...</div>
+                <!-- Tin nhắn khi không có bài hát (mặc định ẩn) -->
+                <li class="no-songs" style="display: none;">
+                    <div class="message">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Không có bài hát nào trong danh mục này.</span>
                     </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
-                </li>
-                
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Con Đường Xưa Em Đi</div>
-                        <div class="song-artist">Thanh Tuyền</div>
-                        <div class="song-chord">Con đường xưa em [Am]đi vang lên mãi tóc [Dm]tôi buồn...</div>
-                    </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
-                </li>
-                
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Về Đâu Mái Tóc Người Thương</div>
-                        <div class="song-artist">Quang Lê</div>
-                        <div class="song-chord">1. Hỏi tự sẽ về đôi mắt [Em]em Chiều nào xóa [B7]em...</div>
-                    </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
-                </li>
-                
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Đêm Buồn Tỉnh Lẻ</div>
-                        <div class="song-artist">Trường Vũ</div>
-                        <div class="song-chord">1. Đã lâu [Am] rồi đôi khi cách đôi [C] nơi Tớ duyên...</div>
-                    </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
-                </li>
-                
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Hoa Sứ Nhà Nàng</div>
-                        <div class="song-artist">Đan Nguyên</div>
-                        <div class="song-chord">Đêm đêm ngủ mùi [Am]hương, mùi hoa sứ nhà [Dm]nàng...</div>
-                    </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
-                </li>
-                
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Cô Hàng Xóm</div>
-                        <div class="song-artist">Quang Lê</div>
-                        <div class="song-chord">Tong góc A#m: Capo 1 Vòng ngoại [Am]ô, tôi [G]ơi cô hàng xóm...</div>
-                    </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
-                </li>
-                
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Giã Từ Vũ Khí (Một Mai Giã Từ Vũ Khí)</div>
-                        <div class="song-artist">Ngân Khánh</div>
-                        <div class="song-chord">1. Rồi có một [Dm] ngày, sẽ một [C] ngày chính chiến...</div>
-                    </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
-                </li>
-                
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Giã Từ</div>
-                        <div class="song-artist">Quang Lê</div>
-                        <div class="song-chord">Tuổi đời chán dơn [Am]cõi Gót mòn dại lộ [F]buồn...</div>
-                    </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
-                </li>
-                
-                <li class="song-item">
-                    <div class="song-info">
-                        <div class="song-title">Hoa Trinh Nữ</div>
-                        <div class="song-artist">Như Quỳnh</div>
-                    </div>
-                    <button class="favorite-btn">
-                        <i class="far fa-star"></i>
-                    </button>
                 </li>
             </ul>
         </main>
@@ -205,31 +118,26 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
     
     <!-- Scripts tùy chỉnh -->
-    <script src="js/env-loader.js"></script>
-    <script src="js/firebase-config.js"></script>
     <script src="js/firebase-auth.js"></script>
     <script src="js/firestore-operations.js"></script>
     <script src="js/script.js"></script>
     
     <!-- Firebase initialization -->
     <script>
-        // Khởi tạo Firebase dựa trên cấu hình từ env-loader.js
+        // Khởi tạo Firebase với cấu hình từ firebase-constants.js
         document.addEventListener('DOMContentLoaded', function() {
-            // Không cần đợi quá lâu vì env-loader.js đã cung cấp giá trị trực tiếp
-            const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
-                apiKey: "AIzaSyBZvwZYBGhkbWI-GWZ5iXYJ69oAjqPzjhc",
-                authDomain: "kalimbavn-6a518.firebaseapp.com",
-                projectId: "kalimbavn-6a518",
-                storageBucket: "kalimbavn-6a518.appspot.com",
-                messagingSenderId: "775544917341",
-                appId: "1:775544917341:web:b9ce65f7175ca70f97c40d",
-                measurementId: "G-YT9S69HRHW"
-            };
+            // Lấy cấu hình từ firebase-constants.js
+            const firebaseConfig = window.getFirebaseConfig();
             
-            // Khởi tạo Firebase
+            // Khởi tạo Firebase nếu chưa được khởi tạo
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
-                console.log('Firebase đã được khởi tạo thành công.');
+                console.log('Firebase đã được khởi tạo thành công từ firebase-constants.js');
+                
+                // Khởi tạo Analytics nếu có id
+                if (firebaseConfig.measurementId) {
+                    firebase.analytics();
+                }
             }
         });
     </script>
