@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Danh sách email admin
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'danghaile2003@gmail.com' ||
+        request.auth.token.email == 'tranminhchau1904@gmail.com'
+      );
+    }
+    
+    // Tất cả người dùng đều có thể đọc bài hát
+    match /songs/{songId} {
+      allow read: if true;
+      // Chỉ admin mới có quyền thêm, sửa, xóa
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // Quy tắc cho collection users
+    match /users/{userId} {
+      // Kiểm tra người dùng chỉ có thể truy cập thông tin của chính mình
+      function isCurrentUser() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Cho phép người dùng đọc thông tin của chính mình
+      allow read: if isCurrentUser();
+      
+      // Cho phép admin đọc tất cả thông tin người dùng
+      allow read: if isAdmin();
+      
+      // Cho phép tạo/cập nhật thông tin cơ bản của người dùng khi đăng nhập
+      allow create, update: if isCurrentUser() || isAdmin();
+      
+      // Chỉ admin mới có quyền xóa người dùng
+      allow delete: if isAdmin();
+    }
+    
+    // Các quy tắc cho bảng khác
+    match /{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+} 

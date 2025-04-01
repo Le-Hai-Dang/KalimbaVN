@@ -14,11 +14,13 @@
     <script src="js/auth-watchdog.js"></script>
     <script src="js/auth-login-helper.js"></script>
     <script src="js/error-handler.js"></script>
+    <script src="js/admin-auth.js"></script>
     
     <!-- Firebase SDK - Chỉ cần Firestore và Analytics -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
     <!-- Firebase client script -->
     <script src="js/firebase-client.js"></script>
@@ -219,64 +221,46 @@
         <main>
             <h2 class="section-title">Danh mục hợp âm và tab</h2>
             <div class="categories">
-                <div class="category-item">
+                <div class="category-item" data-category="nhac-vang">
                     <div class="category-image" style="background-color: #f4a261;">
                         <h2>Nhạc Vàng tuyển chọn</h2>
                     </div>
                     <div class="category-title">Nhạc Vàng Tuyển Chọn</div>
                 </div>
                 
-                <div class="category-item">
+                <div class="category-item" data-category="de-choi">
                     <div class="category-image" style="background-color: #e9c46a;">
                         <h2>NGƯỜI MỚI TẬP CHƠI</h2>
                     </div>
                     <div class="category-title">Người mới tập chơi</div>
                 </div>
                 
-                <div class="category-item">
+                <div class="category-item" data-category="indie">
                     <div class="category-image" style="background-color: #2a9d8f;">
                         <h2>INDIE VIỆT</h2>
                     </div>
                     <div class="category-title">Indie Việt</div>
                 </div>
                 
-                <div class="category-item">
+                <div class="category-item" data-category="du-ca">
                     <div class="category-image" style="background-color: #264653;">
                         <h2>Du Ca</h2>
                     </div>
                     <div class="category-title">Du Ca</div>
                 </div>
                 
-                <div class="category-item">
+                <div class="category-item" data-category="canon">
                     <div class="category-image" style="background-color: #333333;">
                         <h2>Vòng Canon</h2>
                     </div>
                     <div class="category-title">Vòng Canon</div>
                 </div>
                 
-                <div class="category-item">
+                <div class="category-item" data-category="c-g-am-f">
                     <div class="category-image" style="background-color: #e76f51;">
                         <h2>Vòng hợp âm<br>C-G-Am-F</h2>
                     </div>
                     <div class="category-title">Vòng C G Am F</div>
-                </div>
-            </div>
-
-            <div class="featured-songs">
-                <h2 class="section-title">Bài hát nổi bật</h2>
-                <div class="song-grid">
-                    <!-- Vùng hiển thị trạng thái đang tải -->
-                    <div class="loading-container">
-                        <div class="loading-spinner">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <span>Đang tải bài hát nổi bật...</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Vùng sẽ chứa các bài hát được tải từ Firebase -->
-                    <div id="featured-songs-container" style="display: none;">
-                        <!-- Sẽ được điền bởi JavaScript từ Firestore -->
-                    </div>
                 </div>
             </div>
         </main>
@@ -454,83 +438,48 @@
             if (window.KalimbaFirebase) {
                 KalimbaFirebase.init().then(() => {
                     console.log('Firebase đã được khởi tạo');
-                    
-                    // Nạp các bài hát nổi bật từ Firestore
-                    loadFeaturedSongs();
                 }).catch(error => {
                     console.error('Lỗi khi khởi tạo Firebase:', error);
                 });
             }
         });
-        
-        // Nạp các bài hát nổi bật từ Firestore
-        async function loadFeaturedSongs() {
-            try {
-                const loadingContainer = document.querySelector('.loading-container');
-                const featuredSongsContainer = document.getElementById('featured-songs-container');
-                
-                // Nạp bài hát từ Firestore
-                const songs = await KalimbaFirebase.loadFeaturedSongs(6);
-                
-                if (songs.length > 0) {
-                    // Tạo HTML cho các bài hát
-                    let songsHTML = '';
-                    songs.forEach(song => {
-                        songsHTML += `
-                            <div class="featured-song-item">
-                                <a href="song-detail.html?id=${song.id}">
-                                    <div class="song-thumb">
-                                        <img src="${song.thumbnail || 'images/default-song.jpg'}" alt="${song.title}">
-                                        <div class="play-icon">
-                                            <i class="fas fa-play"></i>
-                                        </div>
-                                    </div>
-                                    <div class="song-info">
-                                        <h3>${song.title}</h3>
-                                        <p>${song.artist}</p>
-                                    </div>
-                                </a>
-                            </div>
-                        `;
-                    });
-                    
-                    // Cập nhật HTML
-                    featuredSongsContainer.innerHTML = songsHTML;
-                    
-                    // Hiển thị container bài hát, ẩn loading
-                    loadingContainer.style.display = 'none';
-                    featuredSongsContainer.style.display = 'grid';
-                } else {
-                    // Không có bài hát nào
-                    loadingContainer.innerHTML = `
-                        <div class="no-songs">
-                            <i class="fas fa-music"></i>
-                            <p>Chưa có bài hát nổi bật. Vui lòng quay lại sau.</p>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Lỗi khi tải bài hát nổi bật:', error);
-                
-                // Sử dụng ErrorHandler để hiển thị lỗi thân thiện hơn
-                if (window.ErrorHandler) {
-                    window.ErrorHandler.show(error, {
-                        duration: 8000,
-                        position: 'top-center'
-                    });
-                }
-                
-                document.querySelector('.loading-container').innerHTML = `
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Không thể tải bài hát. Vui lòng thử lại sau hoặc <a href="#" onclick="loadFeaturedSongs(); return false;">nhấn vào đây</a> để tải lại.</p>
-                    </div>
-                `;
-            }
-        }
     </script>
     
     <!-- Google Auth Integration -->
     <script src="js/google-auth.js"></script>
+
+    <!-- Script ẩn thông báo lỗi quyền -->
+    <script>
+      // Hàm ẩn thông báo lỗi quyền
+      function hidePermissionErrors() {
+        // Tìm tất cả thông báo lỗi (dựa vào màu và nội dung)
+        const errorElements = document.querySelectorAll('div[style*="background-color: #f8d7da"], .firebase-error-message, .error-message');
+        
+        errorElements.forEach(element => {
+          // Kiểm tra nội dung
+          const content = element.textContent || '';
+          if (content.includes('không có quyền') || 
+              content.includes('đăng nhập lại') || 
+              content.includes('permission') ||
+              content.includes('Bạn không có quyền')) {
+            // Ẩn ngay lập tức
+            element.style.display = 'none';
+            
+            // Xóa khỏi DOM
+            setTimeout(() => {
+              if (element.parentNode) {
+                element.parentNode.removeChild(element);
+              }
+            }, 100);
+          }
+        });
+      }
+
+      // Thực thi ngay khi script được tải
+      hidePermissionErrors();
+      
+      // Thiết lập thực thi định kỳ
+      setInterval(hidePermissionErrors, 500);
+    </script>
 </body>
 </html> 

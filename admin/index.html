@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Kalimba Chill</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/google-auth.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="../images/logo.jpeg" type="image/jpeg">
+    
+    <!-- Script để xóa bộ nhớ cache -->
+    <script src="../js/clear-cache.js"></script>
+    <script src="../js/error-handler.js"></script>
+    
+    <!-- Firebase SDK - Chỉ cần Firestore và Analytics -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics-compat.js"></script>
+
+    <!-- Firebase client script -->
+    <script src="../js/firebase-client.js"></script>
+    
+    <!-- Firebase Debug Tool -->
+    <script src="../js/firebase-debug.js"></script>
+    
+    <!-- Admin Auth script -->
+    <script src="../js/admin-auth.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="desktop-header">
+        <div class="container">
+            <div class="header-left">
+                <a href="../index.html" class="logo">
+                    <img src="../images/logo.jpeg" alt="Kalimba Chill">
+                    <span>Kalimba Chill - Trang Quản Trị</span>
+                </a>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="../index.html"><i class="fas fa-home"></i> Trang chủ</a></li>
+                    <li><a href="#songs"><i class="fas fa-music"></i> Quản lý bài hát</a></li>
+                    <li><a href="#users"><i class="fas fa-users"></i> Quản lý người dùng</a></li>
+                </ul>
+            </nav>
+            <div class="header-right">
+                <div class="user-info">
+                    <span class="user-name">Admin</span>
+                    <div class="header-avatar">
+                        <img src="../images/avatar-placeholder.png" alt="Avatar" id="userAvatar">
+                    </div>
+                    <div class="user-menu">
+                        <div class="user-menu-items">
+                            <a href="../index.html" class="user-menu-item"><i class="fas fa-home"></i> Trang chủ</a>
+                            <a href="#" class="user-menu-item logout"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Nút đóng thông báo lỗi -->
+    <div id="error-close-container" style="display: none; position: fixed; top: 10px; right: 10px; z-index: 10000;">
+        <button id="close-error-btn" class="primary-btn" style="background-color: #dc3545;">
+            <i class="fas fa-times"></i> Đóng thông báo
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <div class="admin-header">
+                <h1><i class="fas fa-user-shield"></i> Trang Quản Trị</h1>
+                <p>Chào mừng đến với trang quản trị Kalimba Chill. Tại đây bạn có thể quản lý bài hát và người dùng.</p>
+            </div>
+
+            <!-- Admin Tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="songs"><i class="fas fa-music"></i> Quản lý bài hát</button>
+                <button class="tab-btn" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</button>
+                <button class="tab-btn" data-tab="settings"><i class="fas fa-cog"></i> Cài đặt</button>
+            </div>
+
+            <!-- Song Management Tab -->
+            <div class="tab-content active" id="songs-tab">
+                <div class="admin-section-header">
+                    <h2>Quản lý bài hát</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="add-song-btn" class="primary-btn"><i class="fas fa-plus"></i> Thêm bài hát mới</button>
+                    </div>
+                    <div class="user-stats-summary">
+                        <div class="stat-card" id="total-songs-card">
+                            <div class="stat-value">--</div>
+                            <div class="stat-label">Tổng số bài hát</div>
+                        </div>
+                        <div class="stat-card" id="nhac-vang-songs-card">
+                            <div class="stat-value">--</div>
+                            <div class="stat-label">Nhạc Vàng</div>
+                        </div>
+                        <div class="stat-card" id="nhac-tre-songs-card">
+                            <div class="stat-value">--</div>
+                            <div class="stat-label">Nhạc Trẻ</div>
+                        </div>
+                        <div class="stat-card" id="recent-songs-card">
+                            <div class="stat-value">--</div>
+                            <div class="stat-label">Thêm gần đây</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Song Search and Filter -->
+                <div class="search-filter">
+                    <div class="search-box">
+                        <input type="text" id="song-search" placeholder="Tìm kiếm bài hát...">
+                        <button id="song-search-btn"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="filter-options">
+                        <select id="song-filter">
+                            <option value="all">Tất cả bài hát</option>
+                            <option value="recent">Thêm gần đây</option>
+                            <option value="nhac-vang">Nhạc Vàng</option>
+                            <option value="nhac-tre">Nhạc Trẻ</option>
+                            <option value="indie">Indie Việt</option>
+                            <option value="de-choi">Dễ chơi</option>
+                            <option value="du-ca">Du Ca</option>
+                            <option value="canon">Vòng Canon</option>
+                            <option value="c-g-am-f">Vòng C G Am F</option>
+                        </select>
+                        <button id="reload-songs-btn" class="secondary-btn"><i class="fas fa-sync-alt"></i> Tải lại</button>
+                    </div>
+                </div>
+
+                <!-- Songs Table -->
+                <div class="table-responsive">
+                    <table class="admin-table" id="songs-table">
+                        <thead>
+                            <tr>
+                                <th>Ảnh</th>
+                                <th>Tên bài hát</th>
+                                <th>Thể loại</th>
+                                <th>Ngày tạo</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="songs-list">
+                            <!-- Song rows will be inserted here by JavaScript -->
+                            <tr class="loading-row">
+                                <td colspan="5" class="text-center">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin"></i> Đang tải bài hát...
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- User Management Tab -->
+            <div class="tab-content" id="users-tab">
+                <div class="admin-section-header">
+                    <h2>Quản lý người dùng</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="reload-users-btn" class="primary-btn"><i class="fas fa-sync-alt"></i> Tải lại danh sách</button>
+                    </div>
+                    <div class="user-stats-summary">
+                        <div class="stat-card" id="total-users-card">
+                            <div class="stat-value">--</div>
+                            <div class="stat-label">Tổng số người dùng</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Search and Filter Bar -->
+                <div class="search-filter">
+                    <div class="search-box">
+                        <input type="text" id="user-search" name="user-search" placeholder="Tìm kiếm theo tên hoặc email..." autocomplete="off">
+                        <button id="user-search-btn"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="filter-options">
+                        <select id="user-filter">
+                            <option value="all">Tất cả người dùng</option>
+                            <option value="recent">Đăng nhập gần đây</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="table-responsive">
+                    <table class="admin-table" id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Ảnh</th>
+                                <th>Tên người dùng</th>
+                                <th>Email</th>
+                                <th>Đăng nhập gần nhất</th>
+                                <th>Số lần đăng nhập</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-list">
+                            <!-- User rows will be inserted here by JavaScript -->
+                            <tr class="loading-row">
+                                <td colspan="6" class="text-center">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin"></i> Đang tải danh sách người dùng...
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Tab (placeholder for now) -->
+            <div class="tab-content" id="settings-tab">
+                <div class="admin-section-header">
+                    <h2>Cài đặt hệ thống</h2>
+                </div>
+                
+                <div class="placeholder-content">
+                    <p>Tính năng cài đặt đang được phát triển.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Song Form Modal -->
+    <div class="modal" id="song-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Thêm bài hát mới</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="song-form">
+                    <input type="hidden" id="song-id">
+                    
+                    <div class="form-group">
+                        <label for="song-title">Tên bài hát <span class="required">*</span></label>
+                        <input type="text" id="song-title" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="song-category">Phân loại <span class="required">*</span></label>
+                        <select id="song-category" required>
+                            <option value="">-- Chọn phân loại --</option>
+                            <option value="nhac-vang">Nhạc Vàng</option>
+                            <option value="nhac-tre">Nhạc Trẻ</option>
+                            <option value="indie">Indie Việt</option>
+                            <option value="de-choi">Dễ chơi</option>
+                            <option value="du-ca">Du Ca</option>
+                            <option value="canon">Vòng Canon</option>
+                            <option value="c-g-am-f">Vòng C G Am F</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="song-featured">Nổi bật</label>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="song-featured">
+                            <span class="toggle-slider"></span>
+                        </div>
+                        <small>Hiển thị bài hát này trong mục nổi bật</small>
+                    </div>
+                    
+                    <!-- Nhập liệu theo format mới: lời và hợp âm xen kẽ -->
+                    <div class="form-section">
+                        <h3>Lời và hợp âm</h3>
+                        <div class="song-line-container" id="song-lines">
+                            <!-- Cặp đầu tiên -->
+                            <div class="song-line-item">
+                                <div class="form-group">
+                                    <label>Lời bài hát (không bắt buộc)</label>
+                                    <input type="text" class="song-lyric" placeholder="Nơi nhập lời bài hát (không bắt buộc)">
+                                </div>
+                            </div>
+                            <div class="song-line-item">
+                                <div class="form-group">
+                                    <label>Hợp âm <span class="required">*</span></label>
+                                    <input type="text" class="song-note" placeholder="Nơi nhập hợp âm (dạng 1, 2, 3,...)" required>
+                                </div>
+                                <button type="button" class="remove-line-btn"><i class="fas fa-times"></i></button>
+                            </div>
+                            
+                            <!-- Cặp thứ hai -->
+                            <div class="song-line-item">
+                                <div class="form-group">
+                                    <input type="text" class="song-lyric" placeholder="Nơi nhập lời bài hát (không bắt buộc)">
+                                </div>
+                            </div>
+                            <div class="song-line-item">
+                                <div class="form-group">
+                                    <input type="text" class="song-note" placeholder="Nơi nhập hợp âm (dạng 1, 2, 3,...)" required>
+                                </div>
+                                <button type="button" class="remove-line-btn"><i class="fas fa-times"></i></button>
+                            </div>
+                            
+                            <!-- Cặp thứ ba -->
+                            <div class="song-line-item">
+                                <div class="form-group">
+                                    <input type="text" class="song-lyric" placeholder="Nơi nhập lời bài hát (không bắt buộc)">
+                                </div>
+                            </div>
+                            <div class="song-line-item">
+                                <div class="form-group">
+                                    <input type="text" class="song-note" placeholder="Nơi nhập hợp âm (dạng 1, 2, 3,...)" required>
+                                </div>
+                                <button type="button" class="remove-line-btn"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                        <button type="button" class="secondary-btn" id="add-line-btn"><i class="fas fa-plus"></i> Thêm dòng</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="song-video">Link video demo</label>
+                        <input type="text" id="song-video" placeholder="Link video demo on tiktok (có thể có hoặc không)">
+                        <small>Đường dẫn video demo bài hát (tùy chọn)</small>
+                    </div>
+                    
+                    <!-- Trường ẩn để lưu dữ liệu cũ -->
+                    <div style="display: none;">
+                        <textarea id="song-notes" rows="5"></textarea>
+                        <textarea id="song-lyrics" rows="5"></textarea>
+                        <input type="text" id="song-artist" value="Không có">
+                        <input type="text" id="song-thumbnail" value="https://kalimbachill.com/images/default-song.jpg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Xem trước</label>
+                        <div class="song-preview" id="song-preview">
+                            <div class="preview-placeholder">
+                                Xem trước nốt nhạc và lời sẽ hiển thị ở đây sau khi nhập
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="secondary-btn" id="cancel-song">Huỷ</button>
+                        <button type="submit" class="primary-btn">Lưu bài hát</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content confirm-content">
+            <div class="modal-header">
+                <h2>Xác nhận xoá</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xoá bài hát "<span id="delete-song-name"></span>"?</p>
+                <p class="warning">Lưu ý: Thao tác này không thể hoàn tác!</p>
+                
+                <div class="form-actions">
+                    <button class="secondary-btn" id="cancel-delete">Huỷ</button>
+                    <button class="danger-btn" id="confirm-delete">Xoá bài hát</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Đang xử lý...</span>
+        </div>
+    </div>
+
+    <!-- User Role Change Modal -->
+    <div class="modal" id="user-role-modal" style="display: none;">
+        <div class="modal-content confirm-content">
+            <div class="modal-header">
+                <h2>Thay đổi vai trò người dùng</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-user-id">
+                <p>Tính năng này đã bị vô hiệu hoá.</p>
+                
+                <div class="form-actions">
+                    <button class="secondary-btn" id="cancel-role-change">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thêm script Debug -->
+    <script>
+        window.addEventListener('load', function() {
+            // Kiểm tra trạng thái Firebase sau 2 giây
+            setTimeout(function() {
+                console.log('Trạng thái Firebase:', window.KalimbaFirebase ? 'Đã load' : 'Chưa load');
+                console.log('Trạng thái Firebase SDK:', typeof firebase !== 'undefined' ? 'Đã load' : 'Chưa load');
+                
+                // Kiểm tra chức năng quản lý người dùng
+                if (window.KalimbaFirebase) {
+                    console.log('Hàm getAllUsers tồn tại:', typeof window.KalimbaFirebase.getAllUsers === 'function');
+                    console.log('Các hàm có trong KalimbaFirebase:', Object.keys(window.KalimbaFirebase));
+                }
+                
+                // Kiểm tra tab users
+                console.log('Tab users hiển thị:', document.getElementById('users-tab').classList.contains('active'));
+            }, 2000);
+        });
+    </script>
+
+    <!-- Admin Script - Chuyển xuống phía dưới để đảm bảo các script Firebase đã được tải xong -->
+    <script src="admin.js"></script>
+    
+    <!-- Script xử lý lỗi -->
+    <script>
+        // Kiểm tra và hiển thị nút đóng thông báo lỗi
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra nút đóng lỗi
+            const closeErrorBtn = document.getElementById('close-error-btn');
+            const errorCloseContainer = document.getElementById('error-close-container');
+            
+            if (closeErrorBtn && errorCloseContainer) {
+                // Check if error message exists
+                const checkErrorInterval = setInterval(function() {
+                    const errorMessage = document.querySelector('.error-message');
+                    if (errorMessage) {
+                        errorCloseContainer.style.display = 'block';
+                    } else {
+                        errorCloseContainer.style.display = 'none';
+                    }
+                }, 2000);
+                
+                // Xử lý sự kiện đóng thông báo lỗi
+                closeErrorBtn.addEventListener('click', function() {
+                    if (window.ErrorHandler && typeof window.ErrorHandler.dismiss === 'function') {
+                        window.ErrorHandler.dismiss();
+                    } else {
+                        const errorMessages = document.querySelectorAll('.error-message');
+                        errorMessages.forEach(msg => msg.remove());
+                    }
+                    errorCloseContainer.style.display = 'none';
+                });
+            }
+        });
+    </script>
+    
+    <!-- Script tự động kiểm tra và phục hồi Firebase -->
+    <script>
+        // Hàm kiểm tra trạng thái SDK Firebase
+        function checkFirebaseSDK() {
+            if (typeof firebase === 'undefined') {
+                console.warn('Firebase SDK không được phát hiện, đang tải lại...');
+                
+                // Tạo các script tags mới
+                const scripts = [
+                    { src: 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js' },
+                    { src: 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js' },
+                    { src: 'https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics-compat.js' }
+                ];
+                
+                // Tải lại các scripts Firebase
+                let loadedScripts = 0;
+                
+                scripts.forEach(scriptInfo => {
+                    const script = document.createElement('script');
+                    script.src = scriptInfo.src;
+                    script.async = true;
+                    
+                    script.onload = function() {
+                        loadedScripts++;
+                        
+                        // Khi tất cả scripts đã được tải
+                        if (loadedScripts === scripts.length) {
+                            // Tải lại firebase-client.js
+                            const clientScript = document.createElement('script');
+                            clientScript.src = '../js/firebase-client.js';
+                            clientScript.async = true;
+                            
+                            clientScript.onload = function() {
+                                console.log('Đã tải lại thành công Firebase SDK');
+                                // Làm mới trang sau 1 giây
+                                setTimeout(() => {
+                                    if (typeof retryConnection === 'function') {
+                                        console.log('Thử kết nối lại với Firebase...');
+                                        retryConnection();
+                                    }
+                                }, 1000);
+                            };
+                            
+                            document.body.appendChild(clientScript);
+                        }
+                    };
+                    
+                    script.onerror = function() {
+                        console.error('Lỗi khi tải script Firebase:', scriptInfo.src);
+                    };
+                    
+                    document.body.appendChild(script);
+                });
+                
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Kiểm tra Firebase sau khi trang đã tải
+        window.addEventListener('load', function() {
+            setTimeout(checkFirebaseSDK, 2000);
+        });
+        
+        // Tạo nút làm mới Firebase SDK
+        function createRefreshButton() {
+            // Kiểm tra xem nút đã tồn tại chưa
+            if (document.getElementById('refresh-firebase-btn')) {
+                return;
+            }
+            
+            const button = document.createElement('button');
+            button.id = 'refresh-firebase-btn';
+            button.innerHTML = '<i class="fas fa-sync-alt"></i> Khởi động lại Firebase';
+            button.className = 'primary-btn';
+            button.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 9999;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 5px;
+                cursor: pointer;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            `;
+            
+            button.addEventListener('click', function() {
+                // Xóa tất cả scripts Firebase hiện tại
+                document.querySelectorAll('script[src*="firebase"]').forEach(script => {
+                    script.parentNode.removeChild(script);
+                });
+                
+                // Xóa biến Firebase khỏi window
+                delete window.firebase;
+                delete window.KalimbaFirebase;
+                
+                // Tải lại Firebase
+                checkFirebaseSDK();
+                
+                // Hiển thị loading overlay
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = 'flex';
+                }
+            });
+            
+            document.body.appendChild(button);
+        }
+        
+        // Tạo nút làm mới sau 5 giây
+        setTimeout(createRefreshButton, 5000);
+    </script>
+
+    <!-- Script ẩn thông báo lỗi quyền -->
+    <script>
+      // Hàm ẩn thông báo lỗi quyền
+      function hidePermissionErrors() {
+        // Tìm tất cả các div có style bao gồm background-color: #f8d7da hoặc các lớp liên quan đến lỗi
+        const errorElements = document.querySelectorAll('div[style*="background-color: #f8d7da"], .firebase-error-message, .error-message');
+        
+        errorElements.forEach(element => {
+          // Kiểm tra nội dung
+          const content = element.textContent || '';
+          if (content.includes('không có quyền') || 
+              content.includes('đăng nhập lại') || 
+              content.includes('permission') ||
+              content.includes('Bạn không có quyền')) {
+            // Ẩn ngay lập tức
+            element.style.display = 'none';
+            
+            // Xóa khỏi DOM
+            setTimeout(() => {
+              if (element.parentNode) {
+                element.parentNode.removeChild(element);
+              }
+            }, 100);
+          }
+        });
+      }
+
+      // Thực thi ngay khi script được tải
+      hidePermissionErrors();
+      
+      // Thiết lập thực thi định kỳ
+      setInterval(hidePermissionErrors, 500);
+    </script>
+    
+    <!-- Nút Debug Firebase -->
+    <button id="debug-firebase-btn" style="position: fixed; bottom: 80px; right: 20px; background-color: #343a40; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; z-index: 9999;">
+      <i class="fas fa-bug" style="margin-right: 5px;"></i> Debug Firebase
+    </button>
+    
+    <script>
+      // Thêm sự kiện click để mở Debug UI
+      document.getElementById('debug-firebase-btn').addEventListener('click', function() {
+        if (window.FirebaseDebug) {
+          window.FirebaseDebug.showUI();
+        } else {
+          alert('Công cụ Firebase Debug chưa được tải!');
+        }
+      });
+    </script>
+
+    <!-- Khởi tạo Firebase ngay lập tức -->
+    <script>
+        // Đảm bảo Firebase được khởi tạo trước
+        window.addEventListener('DOMContentLoaded', async function() {
+            console.log('Đang khởi tạo Firebase...');
+            try {
+                if (window.KalimbaFirebase && typeof window.KalimbaFirebase.init === 'function') {
+                    await window.KalimbaFirebase.init();
+                    console.log('Firebase đã được khởi tạo thành công');
+                } else {
+                    console.error('Không tìm thấy KalimbaFirebase hoặc hàm init');
+                }
+            } catch (error) {
+                console.error('Lỗi khi khởi tạo Firebase:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -40,119 +40,275 @@ function classifyError(error) {
 }
 
 /**
- * Hiển thị thông báo lỗi
- * @param {Error} error Đối tượng lỗi
- * @param {Object} options Tùy chọn hiển thị
+ * Xử lý hiển thị thông báo lỗi
  */
-function showError(error, options = {}) {
-  const defaultOptions = {
-    duration: 5000,
-    position: 'top-center',
-    showIcon: true,
-    showClose: true,
-    autoClose: true
-  };
-  
-  const config = { ...defaultOptions, ...options };
-  const errorType = classifyError(error);
-  
-  // Tạo thông báo lỗi
-  const errorContainer = document.createElement('div');
-  errorContainer.className = `error-message error-${errorType}`;
-  
-  // Tùy chỉnh vị trí
-  let positionStyle = 'top: 20px; left: 50%; transform: translateX(-50%);';
-  if (config.position === 'top-right') {
-    positionStyle = 'top: 20px; right: 20px;';
-  } else if (config.position === 'top-left') {
-    positionStyle = 'top: 20px; left: 20px;';
-  } else if (config.position === 'bottom-center') {
-    positionStyle = 'bottom: 20px; left: 50%; transform: translateX(-50%);';
-  } else if (config.position === 'bottom-right') {
-    positionStyle = 'bottom: 20px; right: 20px;';
-  } else if (config.position === 'bottom-left') {
-    positionStyle = 'bottom: 20px; left: 20px;';
-  }
-  
-  // Tạo content cho thông báo
-  let message = error.message || 'Đã xảy ra lỗi';
-  let icon = 'fa-exclamation-circle';
-  let bgColor = '#f8d7da';
-  let textColor = '#721c24';
-  
-  // Điều chỉnh thông báo dựa trên loại lỗi
-  if (errorType === ErrorTypes.PERMISSION) {
-    message = 'Bạn không có quyền thực hiện thao tác này. Vui lòng đăng nhập lại.';
-    icon = 'fa-lock';
-  } else if (errorType === ErrorTypes.NETWORK) {
-    message = 'Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet của bạn.';
-    icon = 'fa-wifi';
-    bgColor = '#fff3cd';
-    textColor = '#856404';
-  } else if (errorType === ErrorTypes.FIREBASE) {
-    message = 'Lỗi kết nối đến Firebase. Vui lòng thử lại sau.';
-    icon = 'fa-database';
-  }
-  
-  // CSS inline cho thông báo lỗi
-  errorContainer.style.cssText = `
-    position: fixed;
-    ${positionStyle}
-    background-color: ${bgColor};
-    color: ${textColor};
-    padding: 10px 15px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    z-index: 9999;
-    max-width: 400px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  `;
-  
-  // Tạo HTML cho thông báo
-  errorContainer.innerHTML = `
-    <div class="error-content" style="display: flex; align-items: center;">
-      ${config.showIcon ? `<i class="fas ${icon}" style="margin-right: 10px;"></i>` : ''}
-      <span>${message}</span>
-    </div>
-    ${config.showClose ? `<button class="close-error-btn" style="background: none; border: none; color: inherit; cursor: pointer; margin-left: 10px;"><i class="fas fa-times"></i></button>` : ''}
-  `;
-  
-  document.body.appendChild(errorContainer);
-  
-  // Thêm sự kiện đóng thông báo
-  if (config.showClose) {
-    const closeBtn = errorContainer.querySelector('.close-error-btn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        errorContainer.remove();
-      });
+(function() {
+    // Tránh tải nhiều lần
+    if (window.ErrorHandler) {
+        console.log('ErrorHandler đã được tải trước đó, bỏ qua');
+        return;
     }
-  }
+    
+    // Thời gian mặc định hiển thị lỗi
+    const DEFAULT_ERROR_DURATION = 5000;
+    
+    // Vị trí mặc định
+    const DEFAULT_POSITION = 'top-right';
+    
+    // Biến lưu khoảng thời gian kiểm tra
+    let checkInterval = null;
+    
+    // Biến lưu danh sách thông báo lỗi đang hiển thị
+    const activeErrors = new Set();
+    
+    /**
+     * Hiển thị thông báo lỗi
+     * @param {Error|Object|String} error - Đối tượng lỗi hoặc chuỗi thông báo
+     * @param {Object} options - Tùy chọn hiển thị
+     */
+    function show(error, options = {}) {
+        // Ngăn hiển thị quá nhiều lỗi cùng lúc
+        if (activeErrors.size >= 3) {
+            console.warn('Đã đạt giới hạn hiển thị lỗi (3), bỏ qua lỗi mới');
+            console.error('Lỗi bị bỏ qua:', error);
+            return;
+        }
+        
+        let errorMessage = '';
+        
+        // Xử lý các loại tham số lỗi khác nhau
+  if (typeof error === 'string') {
+            errorMessage = error;
+        } else if (error instanceof Error) {
+            errorMessage = error.message || 'Đã xảy ra lỗi không xác định';
+        } else if (error && typeof error === 'object') {
+            errorMessage = error.message || 'Đã xảy ra lỗi không xác định';
+    } else {
+            errorMessage = 'Đã xảy ra lỗi không xác định';
+        }
+        
+        // Tạo ID duy nhất cho thông báo lỗi này
+        const errorId = 'error-' + Date.now() + '-' + Math.round(Math.random() * 1000);
+        
+        // Cài đặt tùy chọn
+        const {
+            duration = DEFAULT_ERROR_DURATION,
+            position = DEFAULT_POSITION,
+            bgColor = '#f8d7da',
+            textColor = '#721c24'
+        } = options;
+        
+        // Tạo phần tử thông báo lỗi
+        const errorElement = document.createElement('div');
+        errorElement.id = errorId;
+        errorElement.className = 'error-message';
+        
+        // Thêm vào danh sách active
+        activeErrors.add(errorId);
+        
+        // Thêm nội dung
+        errorElement.innerHTML = `
+            <div class="error-content">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${errorMessage}</span>
+                <button class="close-error-btn"><i class="fas fa-times"></i></button>
+            </div>
+        `;
+        
+        // Áp dụng CSS
+        errorElement.style.cssText = `
+            position: fixed;
+            ${getPositionStyles(position)}
+            background-color: ${bgColor};
+            color: ${textColor};
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 9999;
+            max-width: 400px;
+            min-width: 250px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            margin: 10px;
+        `;
+        
+        // Thêm vào DOM
+        document.body.appendChild(errorElement);
+        
+        // Thêm sự kiện đóng
+        const closeBtn = errorElement.querySelector('.close-error-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                closeError(errorElement, errorId);
+            });
+        }
+        
+        // Hiển thị với hiệu ứng
+        setTimeout(() => {
+            errorElement.style.opacity = '1';
+        }, 10);
+        
+        // Tự động đóng sau khoảng thời gian nhất định
+        if (duration > 0) {
+            setTimeout(() => {
+                closeError(errorElement, errorId);
+            }, duration);
+        }
+        
+        // Ghi log
+        console.error('Lỗi:', error);
+        
+        return errorId;
+    }
+    
+    /**
+     * Lấy CSS cho vị trí
+     * @param {String} position - Vị trí thông báo
+     * @returns {String} - CSS cho vị trí
+     */
+    function getPositionStyles(position) {
+        switch (position) {
+            case 'top-left':
+                return 'top: 20px; left: 20px;';
+            case 'top-center':
+                return 'top: 20px; left: 50%; transform: translateX(-50%);';
+            case 'bottom-left':
+                return 'bottom: 20px; left: 20px;';
+            case 'bottom-right':
+                return 'bottom: 20px; right: 20px;';
+            case 'bottom-center':
+                return 'bottom: 20px; left: 50%; transform: translateX(-50%);';
+            case 'top-right':
+            default:
+                return 'top: 20px; right: 20px;';
+        }
+    }
+    
+    /**
+     * Đóng thông báo lỗi
+     * @param {HTMLElement} element - Phần tử cần đóng
+     * @param {String} errorId - ID của thông báo lỗi
+     */
+    function closeError(element, errorId) {
+        if (!element) return;
+        
+        // Ẩn dần
+        element.style.opacity = '0';
+        
+        // Xóa khỏi DOM sau khi hoàn thành hiệu ứng
+        setTimeout(() => {
+            if (element.parentNode) {
+                element.parentNode.removeChild(element);
+            }
+            // Xóa khỏi danh sách active
+            activeErrors.delete(errorId);
+        }, 300);
+    }
+    
+    /**
+     * Đóng tất cả thông báo lỗi
+     */
+    function dismiss() {
+        const errorMessages = document.querySelectorAll('.error-message');
+        errorMessages.forEach(element => {
+            element.style.opacity = '0';
+            setTimeout(() => {
+                if (element.parentNode) {
+                    element.parentNode.removeChild(element);
+                }
+            }, 300);
+        });
+        
+        // Xóa tất cả từ danh sách active
+        activeErrors.clear();
+    }
+    
+    /**
+     * Bắt đầu kiểm tra định kỳ lỗi Firebase
+     */
+    function startErrorCheck() {
+        // Nếu đã có interval đang chạy thì dừng lại
+        if (checkInterval) {
+            clearInterval(checkInterval);
+        }
+        
+        // Thiết lập kiểm tra mới
+        checkInterval = setInterval(() => {
+            try {
+                // Lấy lỗi từ localStorage nếu có
+                const lastErrorJson = localStorage.getItem('last_firebase_error');
+                
+                if (lastErrorJson) {
+                    const lastError = JSON.parse(lastErrorJson);
+                    
+                    // Chỉ hiển thị lỗi nếu nó mới xảy ra trong vòng 10 giây
+                    const now = new Date().getTime();
+                    const errorAge = now - lastError.timestamp;
+                    
+                    if (errorAge < 10000) {
+                        show({ message: lastError.message }, { duration: 5000 });
+                        // Xóa khỏi localStorage để không hiển thị lại
+                        localStorage.removeItem('last_firebase_error');
+                    }
+                }
+  } catch (error) {
+                console.error('Lỗi khi kiểm tra lỗi Firebase:', error);
+            }
+        }, 3000); // Kiểm tra mỗi 3 giây thay vì 1 giây
+    }
+    
+    // Bắt đầu kiểm tra sau khi trang đã tải
+    document.addEventListener('DOMContentLoaded', startErrorCheck);
+    
+    // Xuất các hàm ra window object
+    window.ErrorHandler = {
+        show,
+        dismiss,
+        startErrorCheck,
+    };
+})();
+
+/**
+ * Tự động ẩn thông báo lỗi quyền không đủ
+ * Hàm này sẽ tự động tìm và ẩn thông báo lỗi quyền không đủ
+ */
+function autoHidePermissionErrors() {
+  // Tìm tất cả thông báo lỗi
+  const errorMessages = document.querySelectorAll('.error-message');
   
-  // Tự động đóng thông báo sau thời gian đã định
-  if (config.autoClose) {
-    setTimeout(() => {
-      if (errorContainer.parentNode) {
-        errorContainer.remove();
-      }
-    }, config.duration);
-  }
-  
-  // Lưu lỗi vào localStorage để xử lý sau này nếu cần
-  localStorage.setItem('last_error', JSON.stringify({
-    message: error.message || 'Unknown error',
-    code: error.code || 'unknown',
-    type: errorType,
-    timestamp: new Date().getTime()
-  }));
+  // Kiểm tra từng thông báo
+  errorMessages.forEach(msg => {
+    // Kiểm tra nội dung thông báo
+    const messageText = msg.textContent || '';
+    if (messageText.includes('không có quyền') || 
+        messageText.includes('đăng nhập lại') ||
+        messageText.includes('permission-denied')) {
+      // Ẩn thông báo
+      msg.style.display = 'none';
+      
+      // Xóa khỏi DOM sau 100ms để tránh lỗi
+      setTimeout(() => {
+        if (msg.parentNode) {
+          msg.parentNode.removeChild(msg);
+        }
+      }, 100);
+    }
+  });
 }
+
+// Thực thi hàm ngay khi script được tải
+autoHidePermissionErrors();
+
+// Thực thi hàm định kỳ mỗi 500ms để ẩn thông báo mới
+setInterval(autoHidePermissionErrors, 500);
+
+// Thêm vào window object để sử dụng từ bên ngoài
+window.ErrorHandler.hidePermissionErrors = autoHidePermissionErrors;
 
 // Export các hàm ra window object để sử dụng trong HTML
 window.ErrorHandler = {
-  show: showError,
+  show: show,
   classify: classifyError,
-  types: ErrorTypes
+  types: ErrorTypes,
+  dismiss: dismiss
 }; 

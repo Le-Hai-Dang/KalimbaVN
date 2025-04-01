@@ -18,6 +18,18 @@ let prevBtn;
 let nextBtn;
 let dots;
 let googleLoginButtons;
+let categoryItems;
+
+// Thể loại bài hát hiện có
+const songCategories = [
+  'nhac-vang',
+  'nhac-tre',
+  'indie',
+  'de-choi',
+  'du-ca',
+  'canon',
+  'c-g-am-f'
+];
 
 // === Functions ===
 // Toggle sidebar
@@ -685,6 +697,7 @@ function initElements() {
     nextBtn = document.querySelector('.next-btn');
     dots = document.querySelectorAll('.dot');
     googleLoginButtons = document.querySelectorAll('.login-with-google-btn');
+    categoryItems = document.querySelectorAll('.category-item');
     
     // Log element status
     console.log('Menu button found:', !!menuBtn);
@@ -773,7 +786,6 @@ function initElements() {
     }
     
     // Link category items to songs.html
-    const categoryItems = document.querySelectorAll('.category-item');
     if (categoryItems && categoryItems.length > 0) {
         console.log('Setting up category item events');
         categoryItems.forEach(item => {
@@ -854,16 +866,65 @@ function initElements() {
     }
 }
 
-// Initialize on DOM content loaded
+// Khởi tạo khi DOM đã tải xong
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM content loaded');
-    initElements();
+    console.log('DOM đã tải xong, khởi tạo...');
     
-    // Update slider on window resize if exists
-    if (sliderWrapper) {
-        window.addEventListener('resize', setupSlider);
-        console.log('Added resize listener for slider');
+    // Tải dữ liệu trang
+    loadPageData();
+    
+    // Sidebar toggle
+    menuBtn = document.getElementById('menu-btn');
+    sidebar = document.getElementById('sidebar');
+    overlay = document.getElementById('overlay');
+    
+    if (menuBtn) {
+        menuBtn.addEventListener('click', toggleSidebar);
+        console.log('Đã gắn sự kiện cho nút menu');
     }
+    
+    if (overlay) {
+        overlay.addEventListener('click', closeSidebar);
+        console.log('Đã gắn sự kiện cho overlay');
+    }
+    
+    // Xử lý đăng nhập Google
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+        console.log('Phát hiện token xác thực trong URL');
+        if (typeof handleGoogleResponse === 'function') {
+            handleGoogleResponse({ access_token: window.location.hash.match(/access_token=([^&]*)/)[1] });
+        }
+        
+        // Xóa hash từ URL
+        history.pushState("", document.title, window.location.pathname + window.location.search);
+    }
+    
+    // Login buttons
+    if (googleLoginButtons) {
+        googleLoginButtons.forEach(button => {
+            button.addEventListener('click', handleGoogleLogin);
+        });
+    }
+    
+    // Khởi tạo người dùng
+    const savedUser = localStorage.getItem('kalimbaUser');
+    if (savedUser) {
+        try {
+            const user = JSON.parse(savedUser);
+            updateUserInterface(user);
+        } catch (e) {
+            console.error('Lỗi khi phân tích dữ liệu người dùng:', e);
+        }
+    }
+    
+    // Hiển thị UI đăng nhập nếu có JS
+    const loginElements = document.querySelectorAll('.login-requires-js');
+    loginElements.forEach(el => {
+        el.style.display = 'inline-flex';
+    });
+    
+    // Khởi tạo các tính năng khác
+    initOtherFeatures();
 });
 
 // Thay thế export với window object để sử dụng trong môi trường browser
@@ -873,4 +934,166 @@ window.firebaseUtils = {
     showLoading,
     hideLoading,
     showAlert
-}; 
+};
+
+/**
+ * Tải bài hát theo thể loại
+ * @param {String} category Thể loại bài hát (nhac-vang, nhac-tre, indie, de-choi, du-ca, canon, c-g-am-f)
+ */
+async function loadSongsByCategory(category) {
+  try {
+    console.log(`Bắt đầu tải bài hát cho thể loại ${category}...`);
+    
+    if (!window.KalimbaFirebase || typeof window.KalimbaFirebase.getSongsByCategory !== 'function') {
+      console.error('Chức năng tải bài hát theo thể loại chưa khởi tạo');
+      return;
+    }
+    
+    const containerId = `${category}-songs-container`;
+    const sectionId = `${category}-songs`;
+    const loadingContainer = document.querySelector(`#${sectionId} .loading-container`);
+    const songsContainer = document.getElementById(containerId);
+    
+    console.log(`Kiểm tra container: section=${!!document.getElementById(sectionId)}, songs=${!!songsContainer}, loading=${!!loadingContainer}`);
+    
+    if (!songsContainer) {
+      console.warn(`Không tìm thấy container với ID ${containerId} để hiển thị bài hát`);
+      return;
+    }
+    
+    // Hiển thị loading
+    if (loadingContainer) {
+      loadingContainer.style.display = 'flex';
+    } else {
+      console.warn(`Không tìm thấy loading container cho ${category}`);
+    }
+    
+    if (songsContainer) {
+      songsContainer.style.display = 'none';
+    }
+    
+    // Tải bài hát theo thể loại
+    console.log(`Gọi API để lấy bài hát thể loại ${category}...`);
+    const songs = await window.KalimbaFirebase.getSongsByCategory(category, 6);
+    console.log(`Đã nhận ${songs ? songs.length : 0} bài hát cho thể loại ${category}`);
+    
+    // Nếu không có bài hát, hiển thị thông báo
+    if (!songs || songs.length === 0) {
+      if (loadingContainer) {
+        loadingContainer.style.display = 'none';
+      }
+      songsContainer.innerHTML = `<p class="no-songs">Không có bài hát nào thuộc thể loại này.</p>`;
+      songsContainer.style.display = 'block';
+      return;
+    }
+    
+    // Tạo HTML cho bài hát
+    let songsHTML = '';
+    
+    songs.forEach(song => {
+      songsHTML += `
+        <div class="featured-song-item">
+          <div class="song-thumb">
+            <img src="${song.thumbnail || 'images/default-song.jpg'}" alt="${song.title || 'Bài hát'}" onerror="this.src='images/default-song.jpg'">
+            <div class="play-icon">
+              <i class="fas fa-music"></i>
+            </div>
+          </div>
+          <div class="song-info">
+            <h3>${song.title || 'Không có tiêu đề'}</h3>
+            <p>${song.artist || 'Không có nghệ sĩ'}</p>
+          </div>
+          <a href="song-detail.html?id=${song.id}" class="song-link"></a>
+        </div>
+      `;
+    });
+    
+    // Cập nhật HTML và hiển thị
+    songsContainer.innerHTML = songsHTML;
+    if (loadingContainer) {
+      loadingContainer.style.display = 'none';
+    }
+    songsContainer.style.display = 'grid';
+    console.log(`Hoàn tất hiển thị bài hát thể loại ${category}`);
+    
+  } catch (error) {
+    console.error(`Lỗi khi tải bài hát thể loại ${category}:`, error);
+    const containerId = `${category}-songs-container`;
+    const sectionId = `${category}-songs`;
+    const loadingContainer = document.querySelector(`#${sectionId} .loading-container`);
+    const songsContainer = document.getElementById(containerId);
+    
+    if (loadingContainer) {
+      loadingContainer.style.display = 'none';
+    }
+    
+    if (songsContainer) {
+      songsContainer.innerHTML = `<p class="no-songs">Đã xảy ra lỗi khi tải bài hát. Vui lòng thử lại sau.</p>`;
+      songsContainer.style.display = 'block';
+    }
+  }
+}
+
+// Hàm chính để tải tất cả dữ liệu cần thiết
+async function loadPageData() {
+  try {
+    console.log('Bắt đầu tải dữ liệu trang...');
+    
+    // Khởi tạo các phần tử DOM
+    initElements();
+    
+    // Chờ Firebase được khởi tạo
+    await waitForFirebase();
+    
+    // Khởi tạo slider
+    initSlider();
+    
+    // Hiển thị thông báo lỗi nếu có
+    const lastError = localStorage.getItem('last_firebase_error');
+    if (lastError) {
+      try {
+        const errorObj = JSON.parse(lastError);
+        if (new Date().getTime() - errorObj.timestamp < 10000) {
+          showAlert(errorObj.message, 'error', 5000);
+        }
+      } catch (e) {
+        console.error('Lỗi khi phân tích lỗi:', e);
+      }
+    }
+    
+    // Thiết lập sự kiện cho danh mục
+    setupCategoryEvents();
+    
+    console.log('Tải dữ liệu trang hoàn tất');
+  } catch (error) {
+    console.error('Lỗi khi tải dữ liệu trang:', error);
+  }
+}
+
+// Thiết lập sự kiện cho danh mục
+function setupCategoryEvents() {
+  // Link category items để tải bài hát theo thể loại khi click
+  if (categoryItems && categoryItems.length > 0) {
+    categoryItems.forEach(item => {
+      item.addEventListener('click', function() {
+        const category = this.getAttribute('data-category');
+        if (category) {
+          // Chuyển hướng sang trang songs.html với tham số category
+          window.location.href = `songs.html?category=${category}`;
+        }
+      });
+    });
+  }
+}
+
+// Khởi tạo các tính năng khác
+function initOtherFeatures() {
+  // Cập nhật slider khi thay đổi kích thước cửa sổ
+  if (sliderWrapper) {
+    window.addEventListener('resize', setupSlider);
+    console.log('Đã thêm sự kiện resize cho slider');
+  }
+  
+  // Khởi tạo các tính năng khác nếu cần
+  console.log('Đã khởi tạo các tính năng khác');
+} 

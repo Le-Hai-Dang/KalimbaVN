@@ -1,0 +1,858 @@
+/* Admin Dashboard CSS */
+
+/* Main Layout */
+.admin-main {
+    padding: 80px 20px 40px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 80px);
+}
+
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 30px;
+}
+
+.admin-header {
+    margin-bottom: 30px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 20px;
+}
+
+.admin-header h1 {
+    color: #343a40;
+    font-size: 28px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.admin-header h1 i {
+    margin-right: 10px;
+    color: #007bff;
+}
+
+.admin-header p {
+    color: #6c757d;
+    font-size: 16px;
+}
+
+/* Tabs */
+.admin-tabs {
+    display: flex;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.tab-btn {
+    padding: 12px 20px;
+    border: none;
+    background-color: transparent;
+    color: #6c757d;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+    display: flex;
+    align-items: center;
+}
+
+.tab-btn i {
+    margin-right: 8px;
+}
+
+.tab-btn:hover {
+    color: #007bff;
+}
+
+.tab-btn.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+    font-weight: 600;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Section Headers */
+.admin-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.admin-section-header h2 {
+    font-size: 22px;
+    color: #343a40;
+}
+
+/* Buttons */
+.primary-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s;
+    display: inline-flex;
+    align-items: center;
+}
+
+.primary-btn i {
+    margin-right: 8px;
+}
+
+.primary-btn:hover {
+    background-color: #0069d9;
+}
+
+.secondary-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.secondary-btn:hover {
+    background-color: #5a6268;
+}
+
+.danger-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.danger-btn:hover {
+    background-color: #c82333;
+}
+
+.edit-btn, .delete-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.edit-btn {
+    color: #007bff;
+}
+
+.edit-btn:hover {
+    color: #0056b3;
+}
+
+.delete-btn {
+    color: #dc3545;
+}
+
+.delete-btn:hover {
+    color: #bd2130;
+}
+
+/* Search and Filter */
+.search-filter {
+    display: flex;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.search-box {
+    display: flex;
+    flex: 1;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 4px 0 0 4px;
+    font-size: 16px;
+}
+
+.search-box button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 0 15px;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+
+.filter-options select {
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: white;
+    min-width: 200px;
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+.admin-table th, .admin-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.admin-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.admin-table .song-thumbnail {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.admin-table .featured-badge {
+    background-color: #28a745;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-block;
+}
+
+.admin-table .actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 50px 0;
+}
+
+.modal-content {
+    background-color: white;
+    width: 90%;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.confirm-content {
+    max-width: 500px;
+}
+
+.modal-header {
+    padding: 20px 30px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #343a40;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.close-modal:hover {
+    color: #343a40;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-group input[type="text"], 
+.form-group textarea, 
+.form-group select {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #6c757d;
+}
+
+.form-group .required {
+    color: #dc3545;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 30px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #2196F3;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(30px);
+}
+
+/* Song Preview */
+.song-preview {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+    font-family: monospace;
+    white-space: pre-wrap;
+    min-height: 150px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.preview-placeholder {
+    color: #6c757d;
+    text-align: center;
+    padding: 30px 0;
+}
+
+/* Loading */
+.loading-row {
+    text-align: center;
+    color: #6c757d;
+}
+
+.loading-spinner {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.loading-spinner i {
+    margin-right: 8px;
+}
+
+.loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255,255,255,0.8);
+    z-index: 1100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-overlay .loading-spinner {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Placeholders */
+.placeholder-content {
+    text-align: center;
+    padding: 40px 0;
+    color: #6c757d;
+}
+
+/* Helpers */
+.text-center {
+    text-align: center;
+}
+
+.warning {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 20px 15px;
+    }
+    
+    .admin-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .tab-btn {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+    
+    .search-filter {
+        flex-direction: column;
+    }
+    
+    .filter-options select {
+        width: 100%;
+    }
+}
+
+/* CSS cho logo và header của admin */
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.header-left a.logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #333;
+    font-weight: 600;
+}
+
+.header-left a.logo img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+}
+
+/* Responsive for admin header */
+@media (max-width: 768px) {
+    .header-left a.logo span {
+        font-size: 14px;
+    }
+    
+    .header-left a.logo img {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* User info in admin header */
+.user-info {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.user-info .user-name {
+    margin-right: 15px;
+    font-weight: 500;
+}
+
+.user-info .header-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    z-index: 99999;
+}
+
+.user-info .header-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.desktop-header .user-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 200px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 99999;
+}
+
+.desktop-header .user-menu.visible {
+    display: block;
+}
+
+/* Menu được hiển thị khi click vào avatar */
+.user-info .header-avatar:hover + .user-menu,
+.user-menu:hover {
+    display: block;
+}
+
+/* Thêm CSS cho form song line và preview */
+
+/* Form section */
+.form-section {
+    margin-bottom: 30px;
+    border: 1px solid #eee;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.form-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+/* Song line container */
+.song-line-container {
+    margin-bottom: 15px;
+}
+
+/* Song line item - layout mới theo dọc */
+.song-line-item {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.song-line-item .form-group {
+    margin-bottom: 5px;
+    width: 100%;
+}
+
+/* Nút xóa dòng */
+.remove-line-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: background-color 0.2s;
+}
+
+.remove-line-btn:hover {
+    background-color: #d32f2f;
+}
+
+.remove-line-btn i {
+    font-size: 12px;
+}
+
+/* Xem trước bài hát - Cập nhật theo mẫu trong ảnh */
+.song-preview {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    min-height: 100px;
+}
+
+.song-preview h2 {
+    font-size: 28px;
+    margin-top: 0;
+    margin-bottom: 30px;
+    color: #000;
+    text-align: center;
+    font-weight: bold;
+}
+
+.preview-lyric, 
+.preview-no-lyric {
+    margin-bottom: 0;
+    color: #333;
+    font-size: 18px;
+    padding: 10px 0;
+}
+
+.preview-note {
+    font-family: monospace;
+    font-size: 24px;
+    margin-bottom: 20px;
+    padding: 0 0 15px 0;
+    color: #000;
+    font-weight: 600;
+}
+
+.preview-video {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.video-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 15px;
+    background-color: transparent;
+    color: #2196F3;
+    text-decoration: none;
+    transition: color 0.2s;
+    font-size: 18px;
+}
+
+.video-link:hover {
+    color: #0d6efd;
+}
+
+.video-link i {
+    margin-right: 10px;
+    font-size: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .song-line {
+        flex-direction: column;
+        align-items: stretch;
+        margin-bottom: 20px;
+    }
+    
+    .song-line .form-group {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    
+    .remove-line-btn {
+        right: 0;
+        top: 0;
+    }
+}
+
+/* Cải thiện nút thêm dòng */
+#add-line-btn {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    background-color: #3f51b5;
+}
+
+#add-line-btn:hover {
+    background-color: #303f9f;
+}
+
+/* Định dạng thẻ thống kê */
+.user-stats-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stat-card {
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 15px;
+    min-width: 150px;
+    text-align: center;
+    border-left: 4px solid #007bff;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+/* Định dạng bảng người dùng */
+#users-table .user-avatar-cell {
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+    border-radius: 50%;
+}
+
+#users-table .user-avatar-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-role {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.role-admin {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.role-user {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Nút thay đổi vai trò */
+.role-change-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.role-change-btn:hover {
+    background-color: #5a6268;
+}
+
+/* Format thời gian đăng nhập */
+.last-login {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+/* Số lần đăng nhập */
+.login-count {
+    font-size: 14px;
+    color: #28a745;
+    font-weight: bold;
+}
+
+/* Định dạng cho số người dùng không có */
+.no-users {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.no-users i {
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: #dee2e6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .user-stats-summary {
+        flex-direction: column;
+    }
+    
+    .stat-card {
+        width: 100%;
+    }
+    
+    #users-table .user-avatar-cell {
+        width: 40px;
+        height: 40px;
+    }
+} 

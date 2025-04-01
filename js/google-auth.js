@@ -80,6 +80,8 @@ function fetchUserInfo(accessToken) {
 
 // Lưu thông tin người dùng vào localStorage
 function saveUserData(userData, token) {
+    console.log('Lưu thông tin người dùng:', userData);
+    
     currentUser = {
         id: userData.sub,
         name: userData.name,
@@ -89,8 +91,34 @@ function saveUserData(userData, token) {
         loginTime: new Date().getTime()
     };
     
+    console.log('Đã chuẩn bị dữ liệu người dùng để lưu:', currentUser);
+    
     // Lưu vào localStorage để duy trì đăng nhập
     localStorage.setItem('kalimbaUser', JSON.stringify(currentUser));
+    
+    // Lưu thông tin người dùng vào Firestore
+    if (window.KalimbaFirebase && typeof window.KalimbaFirebase.saveUserToFirestore === 'function') {
+        console.log('Tìm thấy hàm saveUserToFirestore, đang lưu dữ liệu vào Firestore...');
+        
+        // Gọi hàm lưu thông tin vào Firestore - sử dụng async/await
+        (async () => {
+            try {
+                const result = await window.KalimbaFirebase.saveUserToFirestore(currentUser);
+                console.log('Đã lưu thông tin người dùng vào Firestore, kết quả:', result);
+            } catch (error) {
+                console.error('Lỗi khi lưu thông tin người dùng vào Firestore:', error);
+                // Không làm gì thêm, vẫn cho phép đăng nhập thành công
+            }
+        })();
+    } else {
+        console.warn('Hàm saveUserToFirestore không khả dụng');
+        
+        if (!window.KalimbaFirebase) {
+            console.error('Đối tượng KalimbaFirebase không tồn tại');
+        } else {
+            console.error('Hàm saveUserToFirestore không tồn tại trong KalimbaFirebase:', window.KalimbaFirebase);
+        }
+    }
 }
 
 // Kiểm tra trạng thái đăng nhập

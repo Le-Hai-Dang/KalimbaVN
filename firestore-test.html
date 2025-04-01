@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase/Firestore Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .test-box {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #0069d9;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        .log-container {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-error {
+            color: #dc3545;
+        }
+        .log-warning {
+            color: #ffc107;
+        }
+        .log-success {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase/Firestore Connection Test</h1>
+    
+    <div class="container">
+        <div class="test-box">
+            <div class="test-title">1. Kiểm tra thư viện Firebase</div>
+            <button id="check-firebase-sdk-btn">Kiểm tra SDK</button>
+            <div id="firebase-sdk-result" class="result"></div>
+        </div>
+        
+        <div class="test-box">
+            <div class="test-title">2. Kiểm tra kết nối Firestore</div>
+            <button id="check-firestore-btn">Kiểm tra kết nối</button>
+            <div id="firestore-result" class="result"></div>
+        </div>
+        
+        <div class="test-box">
+            <div class="test-title">3. Kiểm tra quyền đọc bài hát</div>
+            <button id="check-song-read-btn">Kiểm tra đọc bài hát</button>
+            <div id="song-read-result" class="result"></div>
+        </div>
+        
+        <div class="test-box">
+            <div class="test-title">4. Kiểm tra quyền ghi bài hát</div>
+            <button id="check-song-write-btn">Kiểm tra thêm bài hát</button>
+            <div id="song-write-result" class="result"></div>
+        </div>
+        
+        <div class="test-box">
+            <div class="test-title">5. Hiển thị cấu hình Firebase</div>
+            <button id="show-config-btn">Hiển thị cấu hình</button>
+            <div id="config-result" class="result"></div>
+        </div>
+        
+        <div class="log-container" id="log-container">
+            <h3>Logs</h3>
+            <div id="logs"></div>
+        </div>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Logs
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(logEntry);
+            
+            // Scroll to bottom
+            const container = document.getElementById('log-container');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // Cấu hình Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGS6RibW9FHt83tX2wvVQDo80dwvkIvrY",
+            authDomain: "kalimba-chill.firebaseapp.com",
+            projectId: "kalimba-chill",
+            storageBucket: "kalimba-chill.firebasestorage.app",
+            messagingSenderId: "847603826023",
+            appId: "1:847603826023:web:5d320dfa08eec4135543c2",
+            measurementId: "G-9V15278SHP"
+        };
+        
+        // Biến lưu instance Firebase
+        let firebaseApp = null;
+        let firestore = null;
+        
+        // Khởi tạo Firebase
+        function initFirebase() {
+            try {
+                if (firebaseApp) return firebaseApp;
+                
+                log('Đang khởi tạo Firebase...');
+                
+                // Đảm bảo thư viện Firebase đã được tải
+                if (!window.firebase) {
+                    const error = 'Thư viện Firebase chưa được tải';
+                    log(error, 'error');
+                    throw new Error(error);
+                }
+                
+                // Khởi tạo Firebase
+                firebaseApp = firebase.initializeApp(firebaseConfig);
+                log('Firebase đã được khởi tạo thành công', 'success');
+                
+                // Khởi tạo Firestore
+                if (firebase.firestore) {
+                    firestore = firebase.firestore();
+                    log('Firestore đã được khởi tạo thành công', 'success');
+                } else {
+                    log('Firebase Firestore không được tìm thấy', 'error');
+                }
+                
+                return firebaseApp;
+            } catch (error) {
+                log(`Lỗi khi khởi tạo Firebase: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        // Kiểm tra SDK Firebase
+        async function checkFirebaseSDK() {
+            const resultElement = document.getElementById('firebase-sdk-result');
+            
+            try {
+                log('Kiểm tra Firebase SDK...');
+                
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK chưa được tải');
+                }
+                
+                log('Firebase SDK đã được tải', 'success');
+                resultElement.textContent = 'Firebase SDK đã được tải thành công';
+                resultElement.className = 'result success';
+                
+                return true;
+            } catch (error) {
+                log(`Lỗi khi kiểm tra Firebase SDK: ${error.message}`, 'error');
+                resultElement.textContent = `Lỗi: ${error.message}`;
+                resultElement.className = 'result error';
+                
+                return false;
+            }
+        }
+        
+        // Kiểm tra kết nối Firestore
+        async function checkFirestoreConnection() {
+            const resultElement = document.getElementById('firestore-result');
+            
+            try {
+                log('Kiểm tra kết nối Firestore...');
+                
+                // Kiểm tra Firebase SDK
+                if (!await checkFirebaseSDK()) {
+                    throw new Error('Firebase SDK chưa được tải');
+                }
+                
+                // Khởi tạo Firebase nếu chưa
+                initFirebase();
+                
+                if (!firestore) {
+                    throw new Error('Firestore chưa được khởi tạo');
+                }
+                
+                // Kiểm tra kết nối
+                log('Thử truy vấn collection _connection_test_...');
+                const testCollection = firestore.collection('_connection_test_');
+                const query = await testCollection.limit(1).get();
+                
+                log('Kết nối Firestore thành công', 'success');
+                resultElement.textContent = 'Kết nối Firestore thành công';
+                resultElement.className = 'result success';
+                
+                return true;
+            } catch (error) {
+                log(`Lỗi khi kiểm tra kết nối Firestore: ${error.message}`, 'error');
+                
+                // Nếu lỗi quyền truy cập, kết nối vẫn hoạt động
+                if (error.code === 'permission-denied') {
+                    log('Kết nối Firestore hoạt động nhưng có vấn đề về quyền truy cập', 'warning');
+                    resultElement.textContent = 'Kết nối OK, nhưng có vấn đề về quyền truy cập';
+                    resultElement.className = 'result warning';
+                    
+                    return true;
+                }
+                
+                resultElement.textContent = `Lỗi: ${error.message}`;
+                resultElement.className = 'result error';
+                
+                return false;
+            }
+        }
+        
+        // Kiểm tra quyền đọc bài hát
+        async function checkSongRead() {
+            const resultElement = document.getElementById('song-read-result');
+            
+            try {
+                log('Kiểm tra quyền đọc bài hát...');
+                
+                // Khởi tạo Firebase nếu chưa
+                initFirebase();
+                
+                if (!firestore) {
+                    throw new Error('Firestore chưa được khởi tạo');
+                }
+                
+                // Thử đọc bài hát
+                log('Thử truy vấn collection songs...');
+                const songsCollection = firestore.collection('songs');
+                const query = await songsCollection.limit(1).get();
+                
+                if (query.empty) {
+                    log('Không tìm thấy bài hát nào, nhưng có quyền đọc', 'success');
+                    resultElement.textContent = 'Có quyền đọc bài hát (không tìm thấy bài hát nào)';
+                } else {
+                    const song = query.docs[0].data();
+                    log('Đọc bài hát thành công: ' + (song.title || 'Không có tiêu đề'), 'success');
+                    resultElement.textContent = `Đọc bài hát thành công: ${song.title || 'Không có tiêu đề'}`;
+                }
+                
+                resultElement.className = 'result success';
+                return true;
+            } catch (error) {
+                log(`Lỗi khi kiểm tra quyền đọc bài hát: ${error.message}`, 'error');
+                resultElement.textContent = `Lỗi: ${error.message}`;
+                resultElement.className = 'result error';
+                
+                return false;
+            }
+        }
+        
+        // Kiểm tra quyền ghi bài hát
+        async function checkSongWrite() {
+            const resultElement = document.getElementById('song-write-result');
+            
+            try {
+                log('Kiểm tra quyền ghi bài hát...');
+                
+                // Khởi tạo Firebase nếu chưa
+                initFirebase();
+                
+                if (!firestore) {
+                    throw new Error('Firestore chưa được khởi tạo');
+                }
+                
+                // Tạo dữ liệu test
+                const testSong = {
+                    title: `Test Song ${new Date().toLocaleTimeString()}`,
+                    artist: 'Test Artist',
+                    category: 'nhac-vang',
+                    featured: false,
+                    notes: ['1', '2', '3'],
+                    lyrics: ['Test 1', 'Test 2', 'Test 3'],
+                    createdAt: new Date().toISOString()
+                };
+                
+                log('Thử thêm bài hát vào collection songs...');
+                log(`Bài hát test: ${testSong.title}`);
+                
+                // Thử thêm bài hát
+                const songsCollection = firestore.collection('songs');
+                const docRef = await songsCollection.add(testSong);
+                
+                if (docRef && docRef.id) {
+                    log(`Thêm bài hát thành công, ID: ${docRef.id}`, 'success');
+                    resultElement.textContent = `Thêm bài hát thành công! ID: ${docRef.id}`;
+                    resultElement.className = 'result success';
+                    
+                    // Thử cập nhật bài hát
+                    log(`Thử cập nhật bài hát ID: ${docRef.id}...`);
+                    
+                    await docRef.update({
+                        updatedAt: new Date().toISOString(),
+                        title: `${testSong.title} (Updated)`
+                    });
+                    
+                    log('Cập nhật bài hát thành công', 'success');
+                    
+                    // Thử xóa bài hát test
+                    log(`Thử xóa bài hát test ID: ${docRef.id}...`);
+                    
+                    await docRef.delete();
+                    
+                    log('Xóa bài hát test thành công', 'success');
+                    resultElement.textContent += ' (Đã xóa sau khi test)';
+                    
+                    return true;
+                } else {
+                    throw new Error('Không nhận được ID sau khi thêm bài hát');
+                }
+            } catch (error) {
+                log(`Lỗi khi kiểm tra quyền ghi bài hát: ${error.message}`, 'error');
+                resultElement.textContent = `Lỗi: ${error.message}`;
+                resultElement.className = 'result error';
+                
+                return false;
+            }
+        }
+        
+        // Hiển thị cấu hình
+        function showConfig() {
+            const resultElement = document.getElementById('config-result');
+            
+            try {
+                log('Hiển thị cấu hình Firebase...');
+                
+                const configStr = JSON.stringify(firebaseConfig, null, 2);
+                resultElement.innerHTML = `<pre>${configStr}</pre>`;
+                
+                log('Hiển thị cấu hình thành công', 'success');
+            } catch (error) {
+                log(`Lỗi khi hiển thị cấu hình: ${error.message}`, 'error');
+                resultElement.textContent = `Lỗi: ${error.message}`;
+                resultElement.className = 'result error';
+            }
+        }
+        
+        // Thêm sự kiện click cho các nút
+        document.getElementById('check-firebase-sdk-btn').addEventListener('click', checkFirebaseSDK);
+        document.getElementById('check-firestore-btn').addEventListener('click', checkFirestoreConnection);
+        document.getElementById('check-song-read-btn').addEventListener('click', checkSongRead);
+        document.getElementById('check-song-write-btn').addEventListener('click', checkSongWrite);
+        document.getElementById('show-config-btn').addEventListener('click', showConfig);
+        
+        // Chạy kiểm tra ban đầu khi trang được tải
+        document.addEventListener('DOMContentLoaded', async function() {
+            log('Trang đã tải xong, bắt đầu kiểm tra...');
+            
+            // Kiểm tra Firebase SDK
+            await checkFirebaseSDK();
+        });
+    </script>
+</body>
+</html> 
