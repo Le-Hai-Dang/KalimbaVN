@@ -324,7 +324,8 @@ function attachLoginEvents() {
     const headerAvatar = document.getElementById('header-avatar');
     const userMenu = document.getElementById('user-menu');
     if (headerAvatar && userMenu) {
-        headerAvatar.addEventListener('click', () => {
+        headerAvatar.addEventListener('click', (event) => {
+            event.stopPropagation();
             if (userMenu.style.display === 'block') {
                 userMenu.style.display = 'none';
             } else {

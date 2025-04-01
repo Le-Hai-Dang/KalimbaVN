@@ -58,7 +58,7 @@ ul {
     top: 0;
     left: 0;
     right: 0;
-    z-index: 1000;
+    z-index: 900;
 }
 
 .desktop-header .container {
@@ -69,6 +69,8 @@ ul {
     align-items: center;
     justify-content: space-between;
     height: 70px;
+    position: relative;
+    z-index: 901;
 }
 
 .desktop-header .logo a {
@@ -80,6 +82,11 @@ ul {
 
 .desktop-header .highlight {
     color: #0066cc;
+}
+
+.desktop-header nav {
+    position: relative;
+    z-index: 902;
 }
 
 .desktop-header nav ul {
@@ -125,6 +132,8 @@ ul {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    position: relative;
+    z-index: 903;
 }
 
 .desktop-header .search-container {
@@ -159,6 +168,8 @@ ul {
 .featured-songs,
 .site-footer {
     display: block; /* Changed from none to block to show on mobile */
+    position: relative;
+    z-index: 800;
 }
 
 .mobile-only {
@@ -2207,9 +2218,55 @@ main {
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1001;
+    z-index: 1050; /* Cao hơn header nhưng không cao hơn overlay */
     overflow: hidden;
     display: none;
+}
+
+/* Đảm bảo menu người dùng hiển thị trên cùng */
+.desktop-header .user-menu-items {
+    position: relative;
+    z-index: 1051;
+}
+
+.desktop-header .user-menu-item {
+    position: relative;
+    z-index: 1052;
+}
+
+.desktop-header .logout {
+    position: relative;
+    z-index: 1053;
+}
+
+/* Sửa lỗi hiển thị menu trên desktop */
+.desktop-header .user-menu {
+    position: absolute;
+    top: 60px;
+    right: 15px;
+    width: 220px;
+    z-index: 1050;
+}
+
+.desktop-header .header-right {
+    position: relative;
+}
+
+.desktop-header .user-menu-item.logout {
+    border-top: 1px solid #eee;
+    position: relative;
+    z-index: 1060;
+}
+
+/* Đảm bảo không có chồng chéo với các phần tử khác */
+.desktop-header .container {
+    position: relative;
+    z-index: 1000;
+}
+
+.desktop-header .header-avatar {
+    position: relative;
+    z-index: 1040;
 }
 
 .user-menu.active {
