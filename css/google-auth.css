@@ -62,7 +62,6 @@
     align-items: center;
     justify-content: center;
     background-color: #f0f0f0;
-    margin-bottom: 10px;
 }
 
 .user-avatar img {
@@ -205,9 +204,60 @@
 }
 
 .header-avatar {
-    display: none; /* Sẽ được hiển thị sau khi đăng nhập */
+    position: relative;
+    transition: transform 0.2s ease;
     cursor: pointer;
-    margin-right: 5px;
+    display: none; /* Ẩn ban đầu, sẽ hiển thị khi đăng nhập */
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.header-avatar.logged-in {
+    display: block;
+}
+
+.header-avatar:hover {
+    transform: scale(1.05);
+}
+
+.header-avatar.active {
+    transform: scale(1.1);
+}
+
+/* Thêm hiệu ứng viền xanh khi active bằng pseudo-element */
+.header-avatar.active::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 102, 204, 0.5);
+    box-shadow: 0 0 5px rgba(0, 102, 204, 0.3);
+    z-index: -1;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 102, 204, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 5px rgba(0, 102, 204, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 102, 204, 0);
+    }
+}
+
+/* Cấu trúc cho avatar */
+.header-avatar .user-avatar {
+    margin-bottom: 0;
+}
+
+.user-menu-header .user-avatar {
+    margin-bottom: 10px;
 }
 
 /* Bỏ qua hiển thị menu khi hover trên desktop */
@@ -215,46 +265,104 @@
     display: none;
 }
 
-/* Chỉ hiển thị menu khi click vào avatar */
-.header-avatar:hover {
-    opacity: 0.8;
-}
-
-.header-right .user-avatar {
-    cursor: pointer;
-    margin-right: 5px;
-    position: relative;
-    margin-bottom: 0;
-    width: 40px;
-    height: 40px;
-}
-
 /* Sửa vị trí của menu trên desktop */
 .desktop-header .user-menu {
-    position: absolute;
-    top: 60px;
-    right: 15px;
+    --arrow-position: 50%;
+    position: fixed;
     width: 220px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    background: white;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
     border-radius: 8px;
-    z-index: 1050;
-    background-color: #fff;
-    padding-bottom: 8px;
+    z-index: 99999;
+    padding: 10px 0;
+    border: 1px solid #eaeaea;
+    overflow: visible;
+    
+    /* Thêm hiệu ứng transition */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
 }
 
-/* Đảm bảo các mục trong menu không bị lỗi */
-.desktop-header .user-menu-items {
+/* Hiển thị menu khi có class visible */
+.desktop-header .user-menu.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Thêm mũi tên chỉ lên menu */
+.desktop-header .user-menu::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: auto;
+    left: var(--arrow-position, 50%);
+    width: 16px;
+    height: 16px;
+    background: white;
+    transform: rotate(45deg);
+    border-left: 1px solid #eaeaea;
+    border-top: 1px solid #eaeaea;
+    z-index: 99998;
+}
+
+/* Menu items */
+.user-menu-items {
     position: relative;
-    z-index: 101;
-    background-color: white;
+    z-index: 99999;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.desktop-header .user-menu-item {
+.user-menu-item {
+    display: block;
+    padding: 12px 20px;
+    color: #333;
+    font-size: 14px;
+    transition: background-color 0.2s;
     position: relative;
-    z-index: 102;
+    z-index: 100000;
 }
 
-/* Đảm bảo nút đăng xuất hiển thị đúng */
-.desktop-header .logout {
-    border-top: 1px solid #eee;
+.user-menu-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* Nút logout */
+.user-menu-item.logout {
+    border-top: 1px solid #eaeaea;
+    color: #f44336;
+    font-weight: 500;
+    margin-top: 5px;
+    padding-top: 12px;
+    position: relative;
+    z-index: 100001;
+}
+
+/* Phần overlay để bắt sự kiện click ra ngoài menu */
+.user-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99998;
+    display: none;
+}
+
+.user-menu-overlay.visible {
+    display: block;
+}
+
+/* Container - đảm bảo overflow visible */
+.desktop-header .container,
+.container {
+    overflow: visible;
+}
+
+body {
+    overflow-x: hidden;
 } 

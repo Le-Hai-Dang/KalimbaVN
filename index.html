@@ -15,6 +15,14 @@
     <script src="js/auth-login-helper.js"></script>
     <script src="js/error-handler.js"></script>
     
+    <!-- Firebase SDK - Chỉ cần Firestore và Analytics -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics-compat.js"></script>
+
+    <!-- Firebase client script -->
+    <script src="js/firebase-client.js"></script>
+    
     <!-- Thông báo lỗi API key -->
     <script>
         // Hiển thị thông báo trợ giúp nếu đã có lỗi API key trước đó
@@ -441,7 +449,85 @@
                     });
                 });
             });
+            
+            // Khởi tạo Firebase
+            if (window.KalimbaFirebase) {
+                KalimbaFirebase.init().then(() => {
+                    console.log('Firebase đã được khởi tạo');
+                    
+                    // Nạp các bài hát nổi bật từ Firestore
+                    loadFeaturedSongs();
+                }).catch(error => {
+                    console.error('Lỗi khi khởi tạo Firebase:', error);
+                });
+            }
         });
+        
+        // Nạp các bài hát nổi bật từ Firestore
+        async function loadFeaturedSongs() {
+            try {
+                const loadingContainer = document.querySelector('.loading-container');
+                const featuredSongsContainer = document.getElementById('featured-songs-container');
+                
+                // Nạp bài hát từ Firestore
+                const songs = await KalimbaFirebase.loadFeaturedSongs(6);
+                
+                if (songs.length > 0) {
+                    // Tạo HTML cho các bài hát
+                    let songsHTML = '';
+                    songs.forEach(song => {
+                        songsHTML += `
+                            <div class="featured-song-item">
+                                <a href="song-detail.html?id=${song.id}">
+                                    <div class="song-thumb">
+                                        <img src="${song.thumbnail || 'images/default-song.jpg'}" alt="${song.title}">
+                                        <div class="play-icon">
+                                            <i class="fas fa-play"></i>
+                                        </div>
+                                    </div>
+                                    <div class="song-info">
+                                        <h3>${song.title}</h3>
+                                        <p>${song.artist}</p>
+                                    </div>
+                                </a>
+                            </div>
+                        `;
+                    });
+                    
+                    // Cập nhật HTML
+                    featuredSongsContainer.innerHTML = songsHTML;
+                    
+                    // Hiển thị container bài hát, ẩn loading
+                    loadingContainer.style.display = 'none';
+                    featuredSongsContainer.style.display = 'grid';
+                } else {
+                    // Không có bài hát nào
+                    loadingContainer.innerHTML = `
+                        <div class="no-songs">
+                            <i class="fas fa-music"></i>
+                            <p>Chưa có bài hát nổi bật. Vui lòng quay lại sau.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Lỗi khi tải bài hát nổi bật:', error);
+                
+                // Sử dụng ErrorHandler để hiển thị lỗi thân thiện hơn
+                if (window.ErrorHandler) {
+                    window.ErrorHandler.show(error, {
+                        duration: 8000,
+                        position: 'top-center'
+                    });
+                }
+                
+                document.querySelector('.loading-container').innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Không thể tải bài hát. Vui lòng thử lại sau hoặc <a href="#" onclick="loadFeaturedSongs(); return false;">nhấn vào đây</a> để tải lại.</p>
+                    </div>
+                `;
+            }
+        }
     </script>
     
     <!-- Google Auth Integration -->

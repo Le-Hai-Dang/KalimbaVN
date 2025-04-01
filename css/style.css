@@ -8,6 +8,7 @@
 
 html {
     font-size: 16px;
+    overflow-x: hidden;
 }
 
 body {
@@ -17,6 +18,7 @@ body {
     background-color: #f5f5f7;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
 
 a {
@@ -40,6 +42,7 @@ ul {
     margin: 0 auto;
     position: relative;
     overflow-x: hidden;
+    overflow: visible;
 }
 
 .section-title {
@@ -70,6 +73,7 @@ ul {
     justify-content: space-between;
     height: 70px;
     position: relative;
+    overflow: visible;
     z-index: 901;
 }
 
@@ -85,6 +89,8 @@ ul {
 }
 
 .desktop-header nav {
+    display: flex;
+    align-items: center;
     position: relative;
     z-index: 902;
 }
@@ -133,7 +139,7 @@ ul {
     align-items: center;
     justify-content: flex-end;
     position: relative;
-    z-index: 903;
+    z-index: 9998;
 }
 
 .desktop-header .search-container {
@@ -167,7 +173,7 @@ ul {
 .image-slider,
 .featured-songs,
 .site-footer {
-    display: block; /* Changed from none to block to show on mobile */
+    display: block;
     position: relative;
     z-index: 800;
 }
@@ -2215,58 +2221,55 @@ main {
     top: 100%;
     right: 0;
     width: 200px;
-    background-color: white;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
     border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1050; /* Cao hơn header nhưng không cao hơn overlay */
-    overflow: hidden;
     display: none;
+    z-index: 9999;
 }
 
-/* Đảm bảo menu người dùng hiển thị trên cùng */
-.desktop-header .user-menu-items {
+.user-menu-items {
     position: relative;
-    z-index: 1051;
+    z-index: 9999;
 }
 
-.desktop-header .user-menu-item {
+.user-menu-item {
     position: relative;
-    z-index: 1052;
+    z-index: 9999;
 }
 
-.desktop-header .logout {
+.user-menu-item.logout {
     position: relative;
-    z-index: 1053;
+    z-index: 9999;
 }
 
 /* Sửa lỗi hiển thị menu trên desktop */
 .desktop-header .user-menu {
-    position: absolute;
+    position: fixed;
     top: 60px;
     right: 15px;
     width: 220px;
-    z-index: 1050;
+    z-index: 99999;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
 }
 
-.desktop-header .header-right {
-    position: relative;
-}
-
-.desktop-header .user-menu-item.logout {
-    border-top: 1px solid #eee;
-    position: relative;
-    z-index: 1060;
-}
-
-/* Đảm bảo không có chồng chéo với các phần tử khác */
-.desktop-header .container {
-    position: relative;
-    z-index: 1000;
+.desktop-header .user-menu.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .desktop-header .header-avatar {
     position: relative;
-    z-index: 1040;
+    z-index: 9998;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.desktop-header .header-avatar:hover {
+    transform: scale(1.05);
 }
 
 .user-menu.active {

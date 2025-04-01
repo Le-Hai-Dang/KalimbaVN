@@ -129,6 +129,7 @@ function updateUIAfterLogin(user) {
     const headerAvatar = document.getElementById('header-avatar');
     if (headerAvatar) {
         headerAvatar.style.display = 'block';
+        headerAvatar.classList.add('logged-in');
     }
     
     // Cập nhật menu người dùng
@@ -140,8 +141,9 @@ function updateUIAfterLogin(user) {
         if (userName) userName.textContent = user.name;
         if (userEmail) userEmail.textContent = user.email;
         
-        // Hiển thị menu người dùng (trên desktop)
-        userMenu.style.display = 'none'; // Sẽ hiển thị khi hover vào avatar
+        // Ẩn menu người dùng (sẽ hiển thị khi click vào avatar)
+        userMenu.style.display = 'none';
+        userMenu.classList.remove('visible');
     }
     
     // Ẩn nút đăng nhập, hiển thị menu user
@@ -190,6 +192,7 @@ function logoutUser() {
     const headerAvatar = document.getElementById('header-avatar');
     if (headerAvatar) {
         headerAvatar.style.display = 'none';
+        headerAvatar.classList.remove('logged-in');
     }
     
     // Hiển thị lại nút đăng nhập
@@ -324,19 +327,122 @@ function attachLoginEvents() {
     const headerAvatar = document.getElementById('header-avatar');
     const userMenu = document.getElementById('user-menu');
     if (headerAvatar && userMenu) {
+        // Tạo overlay để bắt sự kiện click ra ngoài
+        let menuOverlay = document.querySelector('.user-menu-overlay');
+        if (!menuOverlay) {
+            menuOverlay = document.createElement('div');
+            menuOverlay.className = 'user-menu-overlay';
+            document.body.appendChild(menuOverlay);
+        }
+        
+        // Đóng menu và xóa overlay
+        function closeMenu() {
+            userMenu.classList.remove('visible');
+            headerAvatar.classList.remove('active');
+            menuOverlay.classList.remove('visible');
+            
+            // Sau khi hiệu ứng transition hoàn tất, ẩn menu hoàn toàn
+            setTimeout(() => {
+                if (!userMenu.classList.contains('visible')) {
+                    userMenu.style.display = 'none';
+                    menuOverlay.style.display = 'none';
+                }
+            }, 300);
+        }
+        
+        // Hiển thị menu
+        function showMenu() {
+            // Di chuyển menu vào body để tránh bị giới hạn trong header
+            if (!userMenu.getAttribute('data-moved')) {
+                document.body.appendChild(userMenu);
+                userMenu.setAttribute('data-moved', 'true');
+            }
+            
+            // Hiển thị overlay để bắt sự kiện click ra ngoài
+            menuOverlay.style.display = 'block';
+            setTimeout(() => {
+                menuOverlay.classList.add('visible');
+            }, 10);
+            
+            // Cập nhật vị trí của menu căn chỉnh với avatar
+            const avatarRect = headerAvatar.getBoundingClientRect();
+            
+            // Đảm bảo menu luôn hiển thị (display: block) trước khi thêm class 'visible'
+            userMenu.style.display = 'block';
+            
+            // Thêm class active cho avatar
+            headerAvatar.classList.add('active');
+            
+            // Căn menu với avatar (cách avatar 10px từ dưới lên)
+            userMenu.style.position = 'fixed';
+            userMenu.style.top = (avatarRect.bottom + 10) + 'px';
+            
+            // Căn giữa menu với avatar
+            const avatarCenter = avatarRect.left + (avatarRect.width / 2);
+            const menuWidth = 220; // Chiều rộng của menu
+            
+            let leftPosition = avatarCenter - (menuWidth / 2);
+            
+            // Đảm bảo menu không vượt quá viền phải màn hình
+            if (leftPosition + menuWidth > window.innerWidth) {
+                leftPosition = window.innerWidth - menuWidth - 10;
+            }
+            
+            // Đảm bảo menu không vượt quá viền trái màn hình
+            if (leftPosition < 10) {
+                leftPosition = 10;
+            }
+            
+            userMenu.style.left = leftPosition + 'px';
+            userMenu.style.right = 'auto'; // Xóa right position cũ
+            
+            userMenu.style.zIndex = '99999';
+            
+            // Điều chỉnh vị trí mũi tên chỉ lên avatar
+            const arrowPosition = Math.max(20, Math.min(200, avatarCenter - leftPosition));
+            userMenu.style.setProperty('--arrow-position', `${arrowPosition}px`);
+            
+            // Thêm class visible sau khi đã định vị đúng
+            setTimeout(() => {
+                userMenu.classList.add('visible');
+            }, 10);
+        }
+        
+        // Xử lý click vào avatar
         headerAvatar.addEventListener('click', (event) => {
-            event.stopPropagation();
-            if (userMenu.style.display === 'block') {
-                userMenu.style.display = 'none';
+            event.stopPropagation(); // Ngăn sự kiện click lan ra document
+            
+            // Kiểm tra trạng thái menu
+            const isVisible = userMenu.classList.contains('visible');
+            
+            if (isVisible) {
+                closeMenu();
             } else {
-                userMenu.style.display = 'block';
+                showMenu();
             }
         });
         
-        // Đóng menu khi click ra ngoài
-        document.addEventListener('click', (event) => {
-            if (!headerAvatar.contains(event.target) && !userMenu.contains(event.target)) {
-                userMenu.style.display = 'none';
+        // Xử lý click vào overlay
+        menuOverlay.addEventListener('click', (event) => {
+            if (userMenu.classList.contains('visible')) {
+                closeMenu();
+            }
+        });
+        
+        // Ngăn chặn việc đóng menu khi click vào các mục trong menu (trừ nút logout)
+        userMenu.addEventListener('click', (event) => {
+            // Nếu click vào mục logout, cho phép sự kiện lan ra để menu đóng sau khi đăng xuất
+            // Ngược lại, chặn sự kiện để menu không đóng khi click vào các mục khác
+            if (!event.target.classList.contains('logout') && 
+                !event.target.closest('.logout')) {
+                event.stopPropagation();
+            }
+        });
+        
+        // Đóng menu khi nhấn phím Escape
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && userMenu.classList.contains('visible')) {
+                closeMenu();
             }
         });
     }
