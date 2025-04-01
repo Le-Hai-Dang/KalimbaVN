@@ -15,9 +15,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
     
     <!-- Scripts tùy chỉnh -->
     <script src="js/env-loader.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-auth.js"></script>
+    <script src="js/firestore-operations.js"></script>
+    <script src="js/script.js"></script>
 </head>
 <body>
     <div class="container">
@@ -190,51 +195,61 @@
     </div>
     <div class="overlay" id="overlay"></div>
 
+    <!-- Firebase App (cần thiết cho tất cả các sản phẩm của Firebase) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    
+    <!-- Thêm các SDK Firebase mà bạn muốn sử dụng -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    
+    <!-- Scripts tùy chỉnh -->
+    <script src="js/env-loader.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-auth.js"></script>
+    <script src="js/firestore-operations.js"></script>
     <script src="js/script.js"></script>
     
     <!-- Firebase initialization -->
-    <script type="module">
+    <script>
         // Khởi tạo Firebase dựa trên cấu hình từ env-loader.js
         document.addEventListener('DOMContentLoaded', function() {
-            // Kiểm tra xem đã tải được cấu hình chưa
-            setTimeout(() => {
-                const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
-                    apiKey: window.getEnv ? window.getEnv('FIREBASE_API_KEY') : '',
-                    authDomain: window.getEnv ? window.getEnv('FIREBASE_AUTH_DOMAIN') : '',
-                    projectId: window.getEnv ? window.getEnv('FIREBASE_PROJECT_ID') : '',
-                    storageBucket: window.getEnv ? window.getEnv('FIREBASE_STORAGE_BUCKET') : '',
-                    messagingSenderId: window.getEnv ? window.getEnv('FIREBASE_MESSAGING_SENDER_ID') : '',
-                    appId: window.getEnv ? window.getEnv('FIREBASE_APP_ID') : '',
-                    measurementId: window.getEnv ? window.getEnv('FIREBASE_MEASUREMENT_ID') : ''
-                };
-                
-                // Khởi tạo Firebase
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                    console.log('Firebase đã được khởi tạo thành công.');
-                }
-            }, 1000); // Đợi 1 giây để đảm bảo env-loader đã chạy
+            // Không cần đợi quá lâu vì env-loader.js đã cung cấp giá trị trực tiếp
+            const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
+                apiKey: "AIzaSyBZvwZYBGhkbWI-GWZ5iXYJ69oAjqPzjhc",
+                authDomain: "kalimbavn-6a518.firebaseapp.com",
+                projectId: "kalimbavn-6a518",
+                storageBucket: "kalimbavn-6a518.appspot.com",
+                messagingSenderId: "775544917341",
+                appId: "1:775544917341:web:b9ce65f7175ca70f97c40d",
+                measurementId: "G-YT9S69HRHW"
+            };
+            
+            // Khởi tạo Firebase
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log('Firebase đã được khởi tạo thành công.');
+            }
         });
     </script>
     
-    <!-- Firebase authentication -->
-    <script type="module" src="js/firebase-auth.js"></script>
-    
-    <!-- Firestore operations -->
-    <script type="module" src="js/firestore-operations.js"></script>
-    
     <!-- Script xử lý danh sách bài hát -->
-    <script type="module">
-        import { getSongsByCategory, checkFavoriteStatus, toggleFavoriteSong } from './js/firestore-operations.js';
-        
+    <script>
         document.addEventListener('DOMContentLoaded', async function() {
+            // Đảm bảo rằng các hàm Firestore đã được tải
+            if (!window.firestoreOperations) {
+                console.error('Firestore operations chưa được tải');
+                return;
+            }
+            
             // Lấy ID danh mục từ URL hoặc sử dụng một danh mục mặc định
             const urlParams = new URLSearchParams(window.location.search);
             const categoryId = urlParams.get('category') || 'nhac-vang';
             
             try {
                 // Tải danh sách bài hát từ Firestore
-                const songs = await getSongsByCategory(categoryId);
+                const songs = await window.firestoreOperations.getSongsByCategory(categoryId);
                 
                 if (songs.length > 0) {
                     // Cập nhật tiêu đề danh mục
@@ -274,7 +289,7 @@
                     <div class="song-artist">${song.artist}</div>
                     ${song.preview ? `<div class="song-chord">${song.preview}</div>` : ''}
                 </div>
-                <button class="favorite-btn">
+                <button class="favorite-btn" data-song-id="${song.id}">
                     <i class="far fa-star"></i>
                 </button>
             `;
@@ -297,11 +312,10 @@
             const favoriteButtons = document.querySelectorAll('.favorite-btn');
             
             favoriteButtons.forEach(button => {
-                const songItem = button.closest('.song-item');
-                const songId = songItem.dataset.id;
+                const songId = button.dataset.songId;
                 
                 // Kiểm tra trạng thái yêu thích ban đầu
-                checkFavoriteStatus(songId).then(isFavorite => {
+                window.firestoreOperations.checkFavoriteStatus(songId).then(isFavorite => {
                     const icon = button.querySelector('i');
                     if (isFavorite) {
                         icon.classList.remove('far');
@@ -314,20 +328,23 @@
                     event.stopPropagation(); // Ngăn sự kiện click lan ra phần tử cha
                     
                     try {
-                        const isFavorite = await toggleFavoriteSong(songId);
+                        const isFavorite = await window.firestoreOperations.toggleFavoriteSong(songId);
                         const icon = button.querySelector('i');
                         
                         if (isFavorite === true) {
                             // Đã thêm vào yêu thích
                             icon.classList.remove('far');
                             icon.classList.add('fas');
+                            window.firebaseUtils.showAlert('Đã thêm vào danh sách yêu thích', 'success');
                         } else if (isFavorite === false) {
                             // Đã xóa khỏi yêu thích
                             icon.classList.remove('fas');
                             icon.classList.add('far');
+                            window.firebaseUtils.showAlert('Đã xóa khỏi danh sách yêu thích', 'info');
                         }
                     } catch (error) {
                         console.error('Lỗi khi thay đổi trạng thái yêu thích:', error);
+                        window.firebaseUtils.showAlert('Đã xảy ra lỗi khi cập nhật trạng thái yêu thích', 'error');
                     }
                 });
             });

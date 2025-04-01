@@ -15,9 +15,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
     
     <!-- Scripts tùy chỉnh -->
     <script src="js/env-loader.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-auth.js"></script>
+    <script src="js/firestore-operations.js"></script>
+    <script src="js/script.js"></script>
 </head>
 <body>
     <div class="container">
@@ -241,49 +246,54 @@ Chorus:
     </div>
     <div class="overlay" id="overlay"></div>
 
+    <!-- Firebase App (cần thiết cho tất cả các sản phẩm của Firebase) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    
+    <!-- Thêm các SDK Firebase mà bạn muốn sử dụng -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    
+    <!-- Scripts tùy chỉnh -->
+    <script src="js/env-loader.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-auth.js"></script>
+    <script src="js/firestore-operations.js"></script>
     <script src="js/script.js"></script>
     
     <!-- Firebase initialization -->
-    <script type="module">
+    <script>
         // Khởi tạo Firebase dựa trên cấu hình từ env-loader.js
         document.addEventListener('DOMContentLoaded', function() {
-            // Kiểm tra xem đã tải được cấu hình chưa
-            setTimeout(() => {
-                const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
-                    apiKey: window.getEnv ? window.getEnv('FIREBASE_API_KEY') : '',
-                    authDomain: window.getEnv ? window.getEnv('FIREBASE_AUTH_DOMAIN') : '',
-                    projectId: window.getEnv ? window.getEnv('FIREBASE_PROJECT_ID') : '',
-                    storageBucket: window.getEnv ? window.getEnv('FIREBASE_STORAGE_BUCKET') : '',
-                    messagingSenderId: window.getEnv ? window.getEnv('FIREBASE_MESSAGING_SENDER_ID') : '',
-                    appId: window.getEnv ? window.getEnv('FIREBASE_APP_ID') : '',
-                    measurementId: window.getEnv ? window.getEnv('FIREBASE_MEASUREMENT_ID') : ''
-                };
-                
-                // Khởi tạo Firebase
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                    console.log('Firebase đã được khởi tạo thành công.');
-                }
-            }, 1000); // Đợi 1 giây để đảm bảo env-loader đã chạy
+            // Không cần đợi quá lâu vì env-loader.js đã cung cấp giá trị trực tiếp
+            const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
+                apiKey: "AIzaSyBZvwZYBGhkbWI-GWZ5iXYJ69oAjqPzjhc",
+                authDomain: "kalimbavn-6a518.firebaseapp.com",
+                projectId: "kalimbavn-6a518",
+                storageBucket: "kalimbavn-6a518.appspot.com",
+                messagingSenderId: "775544917341",
+                appId: "1:775544917341:web:b9ce65f7175ca70f97c40d",
+                measurementId: "G-YT9S69HRHW"
+            };
+            
+            // Khởi tạo Firebase
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log('Firebase đã được khởi tạo thành công.');
+            }
         });
     </script>
     
-    <!-- Firebase authentication -->
-    <script type="module" src="js/firebase-auth.js"></script>
-    
-    <!-- Firestore operations -->
-    <script type="module" src="js/firestore-operations.js"></script>
-    
     <!-- Script xử lý chi tiết bài hát -->
-    <script type="module">
-        import { 
-            getSongDetails, 
-            checkFavoriteStatus, 
-            toggleFavoriteSong,
-            saveRecentView
-        } from './js/firestore-operations.js';
-        
+    <script>
         document.addEventListener('DOMContentLoaded', async function() {
+            // Đảm bảo rằng các hàm Firestore đã được tải
+            if (!window.firestoreOperations) {
+                console.error('Firestore operations chưa được tải');
+                return;
+            }
+            
             // Lấy ID bài hát từ URL
             const urlParams = new URLSearchParams(window.location.search);
             const songId = urlParams.get('id');
@@ -297,7 +307,7 @@ Chorus:
             
             try {
                 // Tải thông tin chi tiết bài hát từ Firestore
-                const song = await getSongDetails(songId);
+                const song = await window.firestoreOperations.getSongDetails(songId);
                 
                 if (!song) {
                     console.error('Không tìm thấy thông tin bài hát với ID:', songId);
@@ -327,14 +337,14 @@ Chorus:
                     document.querySelector('.kalimba-tab pre').textContent = song.kalimbaTab;
                 }
                 if (song.lyrics) {
-                    document.querySelector('.lyrics').innerHTML = formatLyrics(song.lyrics);
+                    document.querySelector('.lyrics-only .lyrics').innerHTML = formatLyrics(song.lyrics);
                 }
                 
                 // Lưu vào lượt xem gần đây
-                saveRecentView(songId);
+                window.firestoreOperations.saveRecentView(songId);
                 
                 // Kiểm tra trạng thái yêu thích
-                const isFavorite = await checkFavoriteStatus(songId);
+                const isFavorite = await window.firestoreOperations.checkFavoriteStatus(songId);
                 updateFavoriteButton(isFavorite);
                 
                 // Thiết lập các chức năng tương tác
@@ -404,90 +414,79 @@ Chorus:
         // Định dạng lời bài hát
         function formatLyrics(lyrics) {
             if (typeof lyrics === 'string') {
-                // Chuyển đổi xuống dòng thành thẻ <br>
-                return lyrics.split('\n').map(line => {
-                    return line.trim() ? line : '<br>';
-                }).join('<br>');
+                // Chuyển đổi các dòng mới thành thẻ <br>
+                return lyrics.replace(/\n/g, '<br>');
             } else if (Array.isArray(lyrics)) {
-                return lyrics.map(verse => {
-                    return `<p>${verse.join('<br>')}</p>`;
-                }).join('');
+                let html = '';
+                
+                lyrics.forEach(section => {
+                    if (section.type === 'verse') {
+                        html += '<div class="verse">';
+                    } else if (section.type === 'chorus') {
+                        html += '<div class="chorus">';
+                    } else {
+                        html += '<div class="section">';
+                    }
+                    
+                    if (section.title) {
+                        html += `<h4>${section.title}</h4>`;
+                    }
+                    
+                    section.lines.forEach(line => {
+                        if (typeof line === 'string') {
+                            html += `<div class="line">${line}</div>`;
+                        } else if (line.text) {
+                            html += `<div class="line">${line.text}</div>`;
+                        }
+                    });
+                    
+                    html += '</div>'; // Đóng section
+                });
+                
+                return html;
             }
             
             return '<p>Không có lời bài hát</p>';
         }
         
-        // Cập nhật nút yêu thích theo trạng thái
+        // Cập nhật trạng thái nút yêu thích
         function updateFavoriteButton(isFavorite) {
-            const favoriteBtn = document.querySelector('.favorite-btn i');
+            const favoriteBtn = document.querySelector('.favorite-btn');
+            if (!favoriteBtn) return;
+            
+            const icon = favoriteBtn.querySelector('i');
+            
             if (isFavorite) {
-                favoriteBtn.classList.remove('far');
-                favoriteBtn.classList.add('fas');
+                icon.classList.remove('far');
+                icon.classList.add('fas');
             } else {
-                favoriteBtn.classList.remove('fas');
-                favoriteBtn.classList.add('far');
+                icon.classList.remove('fas');
+                icon.classList.add('far');
             }
         }
         
         // Thiết lập các tương tác
         function setupInteractions(songId) {
-            // Xử lý chuyển tab
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            const tabContents = [
-                document.querySelector('.chord-sheet'),
-                document.querySelector('.kalimba-tab'),
-                document.querySelector('.lyrics-only')
-            ];
-            
-            tabButtons.forEach((button, index) => {
-                button.addEventListener('click', () => {
-                    // Ẩn tất cả tab
-                    tabContents.forEach(content => {
-                        content.style.display = 'none';
-                    });
-                    tabButtons.forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    
-                    // Hiển thị tab được chọn
-                    tabContents[index].style.display = 'block';
-                    button.classList.add('active');
-                });
-            });
-            
-            // Xử lý nút yêu thích
+            // Nút yêu thích
             const favoriteBtn = document.querySelector('.favorite-btn');
-            favoriteBtn.addEventListener('click', async () => {
-                try {
-                    const isFavorite = await toggleFavoriteSong(songId);
-                    updateFavoriteButton(isFavorite);
-                } catch (error) {
-                    console.error('Lỗi khi thay đổi trạng thái yêu thích:', error);
-                }
-            });
-            
-            // Xử lý nút quay lại
-            const backBtn = document.querySelector('.back-btn');
-            backBtn.addEventListener('click', () => {
-                window.history.back();
-            });
-            
-            // Xử lý các nút chuyển tone (placeholder - cần bổ sung logic thực tế)
-            const toneUpBtn = document.querySelector('.tone-up');
-            const toneDownBtn = document.querySelector('.tone-down');
-            const transposeBtn = document.querySelector('.transpose');
-            
-            toneUpBtn.addEventListener('click', () => {
-                alert('Tính năng đang phát triển');
-            });
-            
-            toneDownBtn.addEventListener('click', () => {
-                alert('Tính năng đang phát triển');
-            });
-            
-            transposeBtn.addEventListener('click', () => {
-                alert('Tính năng đang phát triển');
-            });
+            if (favoriteBtn) {
+                favoriteBtn.dataset.songId = songId;
+                favoriteBtn.addEventListener('click', async () => {
+                    try {
+                        const isFavorite = await window.firestoreOperations.toggleFavoriteSong(songId);
+                        updateFavoriteButton(isFavorite);
+                        
+                        if (isFavorite) {
+                            window.firebaseUtils.showAlert('Đã thêm vào danh sách yêu thích', 'success');
+                        } else {
+                            window.firebaseUtils.showAlert('Đã xóa khỏi danh sách yêu thích', 'info');
+                        }
+                    } catch (error) {
+                        console.error('Lỗi khi cập nhật trạng thái yêu thích:', error);
+                        window.firebaseUtils.showAlert('Đã xảy ra lỗi khi cập nhật trạng thái yêu thích', 'error');
+                    }
+                });
+            }
         }
     </script>
 </body>

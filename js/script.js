@@ -71,7 +71,14 @@ if (favoriteButtons.length > 0) {
 // Google login buttons
 if (googleLoginButtons.length > 0) {
     googleLoginButtons.forEach(button => {
-        button.addEventListener('click', handleGoogleLogin);
+        // Sử dụng firebase-auth.js
+        button.addEventListener('click', () => {
+            if (window.firebaseAuth && typeof window.firebaseAuth.handleGoogleSignIn === 'function') {
+                window.firebaseAuth.handleGoogleSignIn();
+            } else {
+                handleGoogleLogin();
+            }
+        });
     });
 }
 
@@ -292,32 +299,58 @@ function showTransposeModal() {
 }
 
 // Toggle favorite
-function toggleFavorite(event) {
+async function toggleFavorite(event) {
     const button = event.currentTarget;
+    const songId = button.dataset.songId;
     const icon = button.querySelector('i');
     
-    if (icon.classList.contains('far')) {
-        icon.classList.remove('far');
-        icon.classList.add('fas');
+    // Sử dụng firestore-operations nếu có
+    if (window.firestoreOperations && typeof window.firestoreOperations.toggleFavoriteSong === 'function' && songId) {
+        try {
+            const isNowFavorite = await window.firestoreOperations.toggleFavoriteSong(songId);
+            if (isNowFavorite !== null) {
+                if (isNowFavorite) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    showAlert('Đã thêm vào danh sách yêu thích', 'success');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    showAlert('Đã xóa khỏi danh sách yêu thích', 'info');
+                }
+            }
+        } catch (error) {
+            console.error('Lỗi khi cập nhật trạng thái yêu thích:', error);
+            showAlert('Đã xảy ra lỗi khi cập nhật trạng thái yêu thích', 'error');
+        }
     } else {
-        icon.classList.remove('fas');
-        icon.classList.add('far');
+        // Fallback cho trường hợp không có Firebase
+        if (icon.classList.contains('far')) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+        } else {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+        }
     }
 }
 
 // Handle Google login
 function handleGoogleLogin() {
-    // This is a placeholder for future Google OAuth implementation
+    // Fallback cho chức năng đăng nhập
     alert('Chức năng đăng nhập với Google sẽ được triển khai trong tương lai.');
-    // In a real app, you would redirect to Google OAuth flow
-    // Example: window.location.href = '/auth/google';
 }
 
 // Handle login button click
 if (document.querySelector('.login-btn')) {
     document.querySelector('.login-btn').addEventListener('click', function() {
-        // Xử lý này sẽ được thay thế bởi toggleSidebar
-        // alert('Tính năng đăng nhập với Google sẽ sớm được tích hợp!');
+        // Kiểm tra nếu có firebaseAuth
+        if (window.firebaseAuth && typeof window.firebaseAuth.handleGoogleSignIn === 'function') {
+            window.firebaseAuth.handleGoogleSignIn();
+        } else {
+            // Xử lý này sẽ được thay thế bởi toggleSidebar
+            toggleSidebar();
+        }
     });
 }
 
@@ -388,24 +421,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
-
-// Sidebar menu
-document.addEventListener('DOMContentLoaded', function() {
-    const menuBtn = document.getElementById('menu-btn');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-
-    if (menuBtn && sidebar && overlay) {
-        menuBtn.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        });
-
-        overlay.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-        });
+    
+    // Kiểm tra trạng thái đăng nhập nếu Firebase đã tải
+    if (window.firebaseAuth && typeof window.firebaseAuth.checkAuthStateOnLoad === 'function') {
+        window.firebaseAuth.checkAuthStateOnLoad();
     }
 });
 
@@ -488,8 +507,8 @@ function showAlert(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
-// Export các hàm utility
-export {
+// Thay thế export với window object để sử dụng trong môi trường browser
+window.firebaseUtils = {
     isFirebaseInitialized,
     waitForFirebase,
     showLoading,

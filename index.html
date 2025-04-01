@@ -19,6 +19,10 @@
     
     <!-- Scripts tùy chỉnh -->
     <script src="js/env-loader.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-auth.js"></script>
+    <script src="js/firestore-operations.js"></script>
+    <script src="js/script.js"></script>
 </head>
 <body>
     <div class="container">
@@ -376,62 +380,55 @@
         <div class="overlay" id="overlay"></div>
     </div>
 
-    <script src="js/script.js"></script>
+    <!-- Firebase initialization -->
+    <script>
+        // Khởi tạo Firebase dựa trên cấu hình từ env-loader.js
+        document.addEventListener('DOMContentLoaded', function() {
+            // Không cần đợi quá lâu vì env-loader.js đã cung cấp giá trị trực tiếp
+            const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
+                apiKey: "AIzaSyBZvwZYBGhkbWI-GWZ5iXYJ69oAjqPzjhc",
+                authDomain: "kalimbavn-6a518.firebaseapp.com",
+                projectId: "kalimbavn-6a518",
+                storageBucket: "kalimbavn-6a518.appspot.com",
+                messagingSenderId: "775544917341",
+                appId: "1:775544917341:web:b9ce65f7175ca70f97c40d",
+                measurementId: "G-YT9S69HRHW"
+            };
+            
+            // Khởi tạo Firebase
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                
+                // Khởi tạo Analytics
+                if (firebaseConfig.measurementId) {
+                    firebase.analytics();
+                }
+                
+                console.log('Firebase đã được khởi tạo thành công.');
+            }
+        });
+    </script>
+    
     <script>
         // Copy to clipboard functionality
-        document.querySelectorAll('.copy-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const textToCopy = this.getAttribute('data-copy');
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    // Change icon temporarily to show success
-                    const icon = this.querySelector('i');
-                    icon.classList.remove('fa-copy');
-                    icon.classList.add('fa-check');
-                    
-                    setTimeout(() => {
-                        icon.classList.remove('fa-check');
-                        icon.classList.add('fa-copy');
-                    }, 2000);
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.copy-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const textToCopy = this.getAttribute('data-copy');
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        // Change icon temporarily to show success
+                        const icon = this.querySelector('i');
+                        icon.classList.remove('fa-copy');
+                        icon.classList.add('fa-check');
+                        
+                        setTimeout(() => {
+                            icon.classList.remove('fa-check');
+                            icon.classList.add('fa-copy');
+                        }, 2000);
+                    });
                 });
             });
         });
     </script>
-    
-    <!-- Firebase initialization -->
-    <script type="module">
-        // Khởi tạo Firebase dựa trên cấu hình từ env-loader.js
-        document.addEventListener('DOMContentLoaded', function() {
-            // Kiểm tra xem đã tải được cấu hình chưa
-            setTimeout(() => {
-                const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
-                    apiKey: window.getEnv ? window.getEnv('FIREBASE_API_KEY') : '',
-                    authDomain: window.getEnv ? window.getEnv('FIREBASE_AUTH_DOMAIN') : '',
-                    projectId: window.getEnv ? window.getEnv('FIREBASE_PROJECT_ID') : '',
-                    storageBucket: window.getEnv ? window.getEnv('FIREBASE_STORAGE_BUCKET') : '',
-                    messagingSenderId: window.getEnv ? window.getEnv('FIREBASE_MESSAGING_SENDER_ID') : '',
-                    appId: window.getEnv ? window.getEnv('FIREBASE_APP_ID') : '',
-                    measurementId: window.getEnv ? window.getEnv('FIREBASE_MEASUREMENT_ID') : ''
-                };
-                
-                // Khởi tạo Firebase
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                    
-                    // Khởi tạo Analytics
-                    if (firebaseConfig.measurementId) {
-                        firebase.analytics();
-                    }
-                    
-                    console.log('Firebase đã được khởi tạo thành công.');
-                }
-            }, 1000); // Đợi 1 giây để đảm bảo env-loader đã chạy
-        });
-    </script>
-    
-    <!-- Firebase authentication -->
-    <script type="module" src="js/firebase-auth.js"></script>
-    
-    <!-- Firestore operations -->
-    <script type="module" src="js/firestore-operations.js"></script>
 </body>
 </html> 

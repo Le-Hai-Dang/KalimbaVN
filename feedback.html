@@ -15,9 +15,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
     
     <!-- Scripts tùy chỉnh -->
     <script src="js/env-loader.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-auth.js"></script>
+    <script src="js/firestore-operations.js"></script>
+    <script src="js/script.js"></script>
 </head>
 <body>
     <div class="container">
@@ -267,38 +272,37 @@
     </script>
     
     <!-- Firebase initialization -->
-    <script type="module">
+    <script>
         // Khởi tạo Firebase dựa trên cấu hình từ env-loader.js
         document.addEventListener('DOMContentLoaded', function() {
-            // Kiểm tra xem đã tải được cấu hình chưa
-            setTimeout(() => {
-                const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
-                    apiKey: window.getEnv ? window.getEnv('FIREBASE_API_KEY') : '',
-                    authDomain: window.getEnv ? window.getEnv('FIREBASE_AUTH_DOMAIN') : '',
-                    projectId: window.getEnv ? window.getEnv('FIREBASE_PROJECT_ID') : '',
-                    storageBucket: window.getEnv ? window.getEnv('FIREBASE_STORAGE_BUCKET') : '',
-                    messagingSenderId: window.getEnv ? window.getEnv('FIREBASE_MESSAGING_SENDER_ID') : '',
-                    appId: window.getEnv ? window.getEnv('FIREBASE_APP_ID') : '',
-                    measurementId: window.getEnv ? window.getEnv('FIREBASE_MEASUREMENT_ID') : ''
-                };
-                
-                // Khởi tạo Firebase
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                    console.log('Firebase đã được khởi tạo thành công.');
-                }
-            }, 1000); // Đợi 1 giây để đảm bảo env-loader đã chạy
+            // Không cần đợi quá lâu vì env-loader.js đã cung cấp giá trị trực tiếp
+            const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : {
+                apiKey: "AIzaSyBZvwZYBGhkbWI-GWZ5iXYJ69oAjqPzjhc",
+                authDomain: "kalimbavn-6a518.firebaseapp.com",
+                projectId: "kalimbavn-6a518",
+                storageBucket: "kalimbavn-6a518.appspot.com",
+                messagingSenderId: "775544917341",
+                appId: "1:775544917341:web:b9ce65f7175ca70f97c40d",
+                measurementId: "G-YT9S69HRHW"
+            };
+            
+            // Khởi tạo Firebase
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log('Firebase đã được khởi tạo thành công.');
+            }
         });
     </script>
     
-    <!-- Firebase authentication -->
-    <script type="module" src="js/firebase-auth.js"></script>
-    
     <!-- Xử lý gửi phản hồi -->
-    <script type="module">
-        import { submitFeedback, uploadFile } from './js/firestore-operations.js';
-        
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Đảm bảo rằng các hàm Firestore đã được tải
+            if (!window.firestoreOperations) {
+                console.error('Firestore operations chưa được tải');
+                return;
+            }
+            
             const feedbackForm = document.getElementById('feedback-form');
             const submitButton = feedbackForm.querySelector('.submit-btn');
             
@@ -340,7 +344,7 @@
                         // Tải file lên Firebase Storage
                         const timestamp = new Date().getTime();
                         const filePath = `feedback-attachments/${timestamp}_${file.name}`;
-                        const fileUrl = await uploadFile(file, filePath);
+                        const fileUrl = await window.firestoreOperations.uploadFile(file, filePath);
                         
                         // Thêm URL vào dữ liệu phản hồi
                         formData.attachment = {
@@ -352,7 +356,7 @@
                     }
                     
                     // Gửi phản hồi lên Firestore
-                    await submitFeedback(formData);
+                    await window.firestoreOperations.submitFeedback(formData);
                     
                     // Hiển thị thông báo thành công
                     alert('Cảm ơn bạn đã gửi phản hồi! Chúng tôi sẽ xem xét và phản hồi sớm nhất có thể.');

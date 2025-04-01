@@ -1,14 +1,131 @@
 // Xử lý các thao tác với Firestore
-import { 
-  db, 
-  saveToFirestore, 
-  getFromFirestore, 
-  getAllFromCollection,
-  getCurrentUser
-} from './firebase-config.js';
+
+// Hàm truy cập Firestore
+function db() {
+  if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+    return firebase.firestore();
+  }
+  return null;
+}
+
+// Hàm truy cập Authentication
+function auth() {
+  if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+    return firebase.auth();
+  }
+  return null;
+}
+
+// Hàm truy cập Storage
+function storage() {
+  if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+    return firebase.storage();
+  }
+  return null;
+}
+
+// Lấy người dùng hiện tại
+function getCurrentUser() {
+  const authInstance = auth();
+  if (!authInstance) {
+    return Promise.resolve(null);
+  }
+  
+  return new Promise((resolve, reject) => {
+    const unsubscribe = authInstance.onAuthStateChanged(user => {
+      unsubscribe();
+      resolve(user);
+    }, reject);
+  });
+}
+
+// Lưu dữ liệu vào Firestore
+async function saveToFirestore(collection, document, data) {
+  const dbInstance = db();
+  if (!dbInstance) {
+    throw new Error("Firebase Firestore không được khởi tạo");
+  }
+  
+  try {
+    if (document) {
+      await dbInstance.collection(collection).doc(document).set(data, { merge: true });
+      return document;
+    } else {
+      const docRef = await dbInstance.collection(collection).add(data);
+      return docRef.id;
+    }
+  } catch (error) {
+    console.error("Lỗi lưu dữ liệu:", error);
+    throw error;
+  }
+}
+
+// Lấy dữ liệu từ Firestore
+async function getFromFirestore(collection, document) {
+  const dbInstance = db();
+  if (!dbInstance) {
+    throw new Error("Firebase Firestore không được khởi tạo");
+  }
+  
+  try {
+    const doc = await dbInstance.collection(collection).doc(document).get();
+    if (doc.exists) {
+      return doc.data();
+    }
+    return null;
+  } catch (error) {
+    console.error("Lỗi lấy dữ liệu:", error);
+    throw error;
+  }
+}
+
+// Lấy tất cả dữ liệu từ một collection
+async function getAllFromCollection(collection, queryConstraints = []) {
+  const dbInstance = db();
+  if (!dbInstance) {
+    throw new Error("Firebase Firestore không được khởi tạo");
+  }
+  
+  try {
+    let query = dbInstance.collection(collection);
+    
+    // Áp dụng các ràng buộc truy vấn nếu có
+    queryConstraints.forEach(constraint => {
+      const [field, operator, value] = constraint;
+      query = query.where(field, operator, value);
+    });
+    
+    const snapshot = await query.get();
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Lỗi lấy dữ liệu từ collection:", error);
+    throw error;
+  }
+}
+
+// Tải lên tệp lên storage
+async function uploadFile(file, path) {
+  const storageInstance = storage();
+  if (!storageInstance) {
+    throw new Error("Firebase Storage không được khởi tạo");
+  }
+  
+  try {
+    const storageRef = storageInstance.ref();
+    const fileRef = storageRef.child(path);
+    await fileRef.put(file);
+    return await fileRef.getDownloadURL();
+  } catch (error) {
+    console.error("Lỗi tải tệp lên:", error);
+    throw error;
+  }
+}
 
 // Lấy danh sách bài hát theo danh mục
-export async function getSongsByCategory(categoryId) {
+async function getSongsByCategory(categoryId) {
   try {
     const songs = await getAllFromCollection('songs', [
       ['categoryId', '==', categoryId]
@@ -21,7 +138,7 @@ export async function getSongsByCategory(categoryId) {
 }
 
 // Lấy chi tiết bài hát
-export async function getSongDetails(songId) {
+async function getSongDetails(songId) {
   try {
     const song = await getFromFirestore('songs', songId);
     if (song) {
@@ -49,7 +166,7 @@ async function incrementViewCount(songId) {
 }
 
 // Kiểm tra xem người dùng đã yêu thích bài hát chưa
-export async function checkFavoriteStatus(songId) {
+async function checkFavoriteStatus(songId) {
   const user = await getCurrentUser();
   if (!user) return false;
 
@@ -63,7 +180,7 @@ export async function checkFavoriteStatus(songId) {
 }
 
 // Thêm hoặc xóa bài hát yêu thích
-export async function toggleFavoriteSong(songId) {
+async function toggleFavoriteSong(songId) {
   const user = await getCurrentUser();
   if (!user) {
     alert('Vui lòng đăng nhập để sử dụng tính năng này.');
@@ -108,7 +225,7 @@ export async function toggleFavoriteSong(songId) {
 }
 
 // Lấy danh sách bài hát yêu thích của người dùng
-export async function getFavoriteSongs() {
+async function getFavoriteSongs() {
   const user = await getCurrentUser();
   if (!user) return [];
 
@@ -140,7 +257,7 @@ export async function getFavoriteSongs() {
 }
 
 // Gửi phản hồi (feedback)
-export async function submitFeedback(feedbackData) {
+async function submitFeedback(feedbackData) {
   try {
     const user = await getCurrentUser();
     const data = {
@@ -160,7 +277,7 @@ export async function submitFeedback(feedbackData) {
 }
 
 // Lấy danh sách danh mục
-export async function getCategories() {
+async function getCategories() {
   try {
     const categories = await getAllFromCollection('categories');
     return categories;
@@ -171,7 +288,7 @@ export async function getCategories() {
 }
 
 // Lưu lượt xem gần đây
-export async function saveRecentView(songId) {
+async function saveRecentView(songId) {
   const user = await getCurrentUser();
   if (!user) return;
 
@@ -217,7 +334,7 @@ export async function saveRecentView(songId) {
 }
 
 // Lấy danh sách bài hát xem gần đây
-export async function getRecentSongs() {
+async function getRecentSongs() {
   const user = await getCurrentUser();
   if (!user) return [];
 
@@ -247,4 +364,18 @@ export async function getRecentSongs() {
     console.error('Lỗi khi lấy danh sách bài hát xem gần đây:', error);
     return [];
   }
-} 
+}
+
+// Xuất các hàm để có thể sử dụng từ bên ngoài
+window.firestoreOperations = {
+  getSongsByCategory,
+  getSongDetails,
+  checkFavoriteStatus,
+  toggleFavoriteSong,
+  saveRecentView,
+  getFavoriteSongs,
+  getCategories,
+  getRecentSongs,
+  submitFeedback,
+  uploadFile
+}; 
