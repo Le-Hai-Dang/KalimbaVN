@@ -14,6 +14,58 @@
     <script src="js/auth-login-helper.js"></script>
     <script src="js/error-handler.js"></script>
     <script src="js/firebase-constants.js"></script>
+    <script src="js/firebase-debug.js"></script>
+    
+    <!-- Thông báo lỗi API key -->
+    <script>
+        // Hiển thị thông báo trợ giúp nếu đã có lỗi API key trước đó
+        document.addEventListener('DOMContentLoaded', function() {
+            const lastError = localStorage.getItem('last_auth_error');
+            if (lastError) {
+                try {
+                    const errorObj = JSON.parse(lastError);
+                    if (errorObj && errorObj.code && errorObj.code.includes('api-key-not-valid')) {
+                        // Tạo thông báo trợ giúp
+                        setTimeout(function() {
+                            const helpMessage = document.createElement('div');
+                            helpMessage.style.cssText = `
+                                position: fixed;
+                                top: 10px;
+                                left: 50%;
+                                transform: translateX(-50%);
+                                background-color: #f8d7da;
+                                color: #721c24;
+                                padding: 10px 15px;
+                                border-radius: 5px;
+                                box-shadow: 0 0 10px rgba(0,0,0,0.2);
+                                z-index: 9999;
+                                max-width: 500px;
+                                text-align: center;
+                                font-size: 14px;
+                            `;
+                            
+                            helpMessage.innerHTML = `
+                                <strong>Lỗi kết nối Firebase:</strong> API key không hợp lệ<br>
+                                <span style="font-size: 12px">Nhấn <strong>Ctrl+Shift+F</strong> để mở bảng điều khiển debug và cập nhật API key</span>
+                                <button style="margin-left: 10px; padding: 2px 8px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                                    Đóng
+                                </button>
+                            `;
+                            
+                            const closeBtn = helpMessage.querySelector('button');
+                            closeBtn.addEventListener('click', function() {
+                                helpMessage.remove();
+                            });
+                            
+                            document.body.appendChild(helpMessage);
+                        }, 1000);
+                    }
+                } catch (e) {
+                    console.error('Lỗi khi phân tích lỗi trước đó:', e);
+                }
+            }
+        });
+    </script>
     
     <!-- Firebase App (cần thiết cho tất cả các sản phẩm của Firebase) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>

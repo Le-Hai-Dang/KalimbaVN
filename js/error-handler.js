@@ -43,9 +43,92 @@ const authErrorMessages = {
   'auth/internal-error': 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.'
 };
 
+// Thêm hàm kiểm tra API key chi tiết hơn
+function checkApiKeyValidity() {
+  try {
+    const config = window.getFirebaseConfig ? window.getFirebaseConfig() : null;
+    if (!config || !config.apiKey) {
+      console.error('Không tìm thấy API key trong cấu hình Firebase');
+      return {
+        valid: false,
+        reason: 'API key không được cấu hình'
+      };
+    }
+    
+    // Kiểm tra độ dài cơ bản (API key Firebase thường có độ dài nhất định)
+    if (config.apiKey.length < 20) {
+      console.error('API key có độ dài không hợp lệ');
+      return {
+        valid: false,
+        reason: 'API key quá ngắn, có vẻ không hợp lệ'
+      };
+    }
+    
+    // Kiểm tra định dạng API key (thường bắt đầu bằng AIza)
+    if (!config.apiKey.startsWith('AIza')) {
+      console.error('API key không đúng định dạng');
+      return {
+        valid: false,
+        reason: 'API key không đúng định dạng, API key Firebase thường bắt đầu bằng AIza'
+      };
+    }
+    
+    console.log('API key có vẻ hợp lệ về định dạng:', config.apiKey.substring(0, 8) + '...');
+    return {
+      valid: true,
+      apiKey: config.apiKey.substring(0, 8) + '...'
+    };
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra API key:', error);
+    return {
+      valid: false,
+      reason: 'Lỗi khi kiểm tra API key: ' + error.message
+    };
+  }
+}
+
+// Hàm xử lý cụ thể cho lỗi api-key-not-valid
+function handleApiKeyError() {
+  const keyStatus = checkApiKeyValidity();
+  const config = window.getFirebaseConfig ? window.getFirebaseConfig() : null;
+  
+  let message = 'Lỗi API key không hợp lệ. ';
+  message += keyStatus.valid ? 
+    'API key có định dạng hợp lệ nhưng có thể đã hết hạn hoặc bị vô hiệu hóa.' : 
+    'Lý do: ' + keyStatus.reason;
+  
+  message += '\n\nĐể khắc phục:';
+  message += '\n1. Kiểm tra lại API key trong Firebase Console';
+  message += '\n2. Cập nhật API key trong file js/firebase-constants.js';
+  message += '\n3. Làm mới trang sau khi cập nhật';
+  
+  console.error(message);
+  
+  // Hiển thị thông báo trên UI
+  if (typeof alert === 'function') {
+    alert(message);
+  }
+  
+  return {
+    message: message,
+    config: config ? {
+      apiKey: config.apiKey ? (config.apiKey.substring(0, 8) + '...') : 'Không tìm thấy',
+      authDomain: config.authDomain,
+      projectId: config.projectId
+    } : 'Không tìm thấy cấu hình'
+  };
+}
+
 // Hàm xử lý và hiển thị thông báo lỗi cho người dùng
 function handleAuthError(error) {
   console.error('Firebase Auth Error:', error);
+  
+  // Xử lý riêng cho lỗi api-key-not-valid
+  if (error && (error.code === 'auth/api-key-not-valid' || 
+      (error.code && error.code.includes('api-key-not-valid')) ||
+      (error.message && error.message.includes('api-key-not-valid')))) {
+    return handleApiKeyError();
+  }
   
   // Lấy mã lỗi từ đối tượng lỗi
   let errorCode = error.code || '';
@@ -72,7 +155,8 @@ function handleAuthError(error) {
     errorCode: errorCode,
     errorMessage: error.message || '',
     stackTrace: error.stack || '',
-    friendlyMessage: friendlyMessage
+    friendlyMessage: friendlyMessage,
+    firebaseConfig: window.getFirebaseConfig ? window.getFirebaseConfig() : null
   });
   
   // Cài đặt lưu lỗi để xử lý sau
@@ -130,12 +214,95 @@ function checkFirebaseConfig() {
   }
 }
 
+// Thêm hàm kiểm tra API key
+function testApiKey() {
+  try {
+    const config = window.getFirebaseConfig ? window.getFirebaseConfig() : null;
+    if (!config || !config.apiKey) {
+      console.error('Không tìm thấy API key trong cấu hình Firebase');
+      return false;
+    }
+    
+    console.log('Đang kiểm tra API key Firebase:', config.apiKey.substring(0, 10) + '...');
+    
+    // Hiển thị đầy đủ thông tin cấu hình cho debug
+    console.log('Cấu hình Firebase đầy đủ:', {
+      apiKey: config.apiKey.substring(0, 10) + '...',
+      authDomain: config.authDomain,
+      projectId: config.projectId,
+      storageBucket: config.storageBucket,
+      appInitialized: firebase.apps.length > 0
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra API key:', error);
+    return false;
+  }
+}
+
+// Thêm hàm kiểm tra domain
+function checkAllowedDomains() {
+  try {
+    const currentDomain = window.location.hostname;
+    console.log('Tên miền hiện tại:', currentDomain);
+    console.log('Vui lòng đảm bảo tên miền này đã được thêm vào danh sách được phép trong Firebase Console');
+    
+    return {
+      currentDomain: currentDomain,
+      isLocalhost: currentDomain === 'localhost' || currentDomain === '127.0.0.1'
+    };
+  } catch (error) {
+    console.error('Lỗi khi kiểm tra domain:', error);
+    return null;
+  }
+}
+
+// Thêm hàm khởi động lại Firebase
+function reinitializeFirebase() {
+  try {
+    // Đảm bảo đã tải các script cần thiết
+    if (typeof firebase === 'undefined') {
+      console.error('Firebase SDK chưa được tải, không thể khởi động lại');
+      return false;
+    }
+    
+    // Lấy cấu hình
+    const config = window.getFirebaseConfig ? window.getFirebaseConfig() : null;
+    if (!config) {
+      console.error('Không thể lấy cấu hình Firebase');
+      return false;
+    }
+    
+    // Xóa tất cả các phiên bản Firebase đã khởi tạo
+    firebase.apps.forEach(app => {
+      try {
+        app.delete();
+      } catch (e) {
+        console.error('Không thể xóa ứng dụng Firebase:', e);
+      }
+    });
+    
+    // Khởi tạo lại Firebase
+    firebase.initializeApp(config);
+    console.log('Đã khởi động lại Firebase thành công');
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi khởi động lại Firebase:', error);
+    return false;
+  }
+}
+
 // Thêm các thông tin debug vào window
 window.firebaseDebug = {
   checkConfig: checkFirebaseConfig,
   handleAuthError: handleAuthError,
   clearAuthErrors: () => localStorage.removeItem('last_auth_error'),
-  getLastError: () => JSON.parse(localStorage.getItem('last_auth_error') || 'null')
+  getLastError: () => JSON.parse(localStorage.getItem('last_auth_error') || 'null'),
+  testApiKey: testApiKey,
+  checkApiKeyValidity: checkApiKeyValidity,
+  checkAllowedDomains: checkAllowedDomains,
+  reinitializeFirebase: reinitializeFirebase
 };
 
 // Kiểm tra cấu hình khi tải trang

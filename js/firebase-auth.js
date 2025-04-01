@@ -69,8 +69,22 @@ function signInWithGoogle() {
       console.log("Không thể đăng xuất trước khi đăng nhập lại:", e);
     }
     
+    // Lấy và kiểm tra cấu hình Firebase
+    const firebaseConfig = window.getFirebaseConfig ? window.getFirebaseConfig() : null;
+    if (!firebaseConfig || !firebaseConfig.apiKey) {
+      console.error("Không tìm thấy khóa API Firebase hợp lệ");
+      return Promise.reject(new Error("Khóa API Firebase không hợp lệ hoặc không tồn tại"));
+    }
+    
+    // Log đầy đủ thông tin cấu hình để debug
+    console.log('Đăng nhập với Google sử dụng cấu hình:', {
+      apiKey: `${firebaseConfig.apiKey.substring(0, 8)}...`,
+      authDomain: firebaseConfig.authDomain,
+      projectId: firebaseConfig.projectId,
+      appInitialized: firebase.apps.length > 0
+    });
+    
     // Sử dụng signInWithRedirect để tránh vấn đề popup
-    console.log('Đăng nhập sử dụng Firebase Redirect');
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({
       prompt: 'select_account'
@@ -88,6 +102,17 @@ function signInWithGoogle() {
       })
       .catch(error => {
         console.error("Lỗi đăng nhập với Google (redirect):", error);
+        
+        // Log chi tiết lỗi và cấu hình
+        console.log("Chi tiết lỗi:", {
+          code: error.code,
+          message: error.message,
+          apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 8)}...` : 'Chưa cấu hình',
+          apiKeyLength: firebaseConfig.apiKey ? firebaseConfig.apiKey.length : 0,
+          authDomain: firebaseConfig.authDomain,
+          firebaseInitialized: firebase.apps.length > 0
+        });
+        
         window.authProcessRunning = false;
         throw error;
       });
@@ -366,15 +391,80 @@ async function checkAuthStateOnLoad() {
   }
 }
 
+// Kiểm tra kết nối Firebase sớm khi trang được tải
+function testFirebaseConnection() {
+  try {
+    // Kiểm tra xem Firebase đã được khởi tạo chưa
+    if (typeof firebase === 'undefined' || firebase.apps.length === 0) {
+      console.error('Firebase chưa được khởi tạo khi thử kiểm tra kết nối');
+      return Promise.resolve(false);
+    }
+    
+    const config = window.getFirebaseConfig ? window.getFirebaseConfig() : null;
+    if (!config || !config.apiKey) {
+      console.error('Cấu hình Firebase không hợp lệ khi thử kiểm tra kết nối');
+      return Promise.resolve(false);
+    }
+    
+    console.log('Đang kiểm tra kết nối Firebase với API key:', config.apiKey.substring(0, 8) + '...');
+    
+    // Thử một yêu cầu đơn giản tới Firebase Auth
+    return firebase.auth().fetchSignInMethodsForEmail('test@example.com')
+      .then(() => {
+        console.log('Kết nối Firebase thành công và API key hợp lệ');
+        return true;
+      })
+      .catch(error => {
+        // Một số lỗi là chấp nhận được (như email không tồn tại)
+        if (error.code === 'auth/invalid-email' || error.code === 'auth/user-not-found') {
+          console.log('Kết nối Firebase thành công, API key hợp lệ');
+          return true;
+        }
+        
+        // Lỗi API key không hợp lệ
+        if (error.code === 'auth/api-key-not-valid' || 
+            (error.message && error.message.includes('api-key-not-valid'))) {
+          console.error('API key không hợp lệ khi kiểm tra kết nối Firebase:', error);
+          
+          // Thông báo lỗi API key nếu cần
+          if (window.firebaseDebug && typeof window.firebaseDebug.handleApiKeyError === 'function') {
+            window.firebaseDebug.handleApiKeyError();
+          }
+          
+          return false;
+        }
+        
+        // Các lỗi khác (có thể là lỗi mạng hoặc cấu hình)
+        console.warn('Có lỗi khi kiểm tra kết nối Firebase, nhưng có thể không phải lỗi API key:', error);
+        return false;
+      });
+  } catch (error) {
+    console.error('Lỗi không mong đợi khi kiểm tra kết nối Firebase:', error);
+    return Promise.resolve(false);
+  }
+}
+
 // Khởi tạo khi tài liệu được tải
 document.addEventListener('DOMContentLoaded', () => {
   console.log("Khởi tạo firebase-auth.js");
   
   setTimeout(() => {
-    initializeAuthListener();
-    setupAuthButtons();
-    checkAuthStateOnLoad();
-  }, 500); // Chờ 500ms để đảm bảo các script khác đã chạy
+    // Kiểm tra kết nối Firebase trước
+    testFirebaseConnection()
+      .then(isConnected => {
+        if (isConnected) {
+          // Tiếp tục khởi tạo auth nếu kết nối thành công
+          initializeAuthListener();
+          setupAuthButtons();
+          checkAuthStateOnLoad();
+        } else {
+          console.warn('Không thể kết nối đến Firebase, chức năng xác thực có thể không hoạt động');
+          
+          // Vẫn thiết lập các nút đăng nhập để người dùng có thể thử lại
+          setupAuthButtons();
+        }
+      });
+  }, 1500); // Tăng thời gian chờ lên 1.5 giây để đảm bảo Firebase đã khởi tạo
 });
 
 // Xuất các hàm để có thể sử dụng từ bên ngoài
@@ -386,5 +476,6 @@ window.firebaseAuth = {
   handleSignOut,
   checkAuthStateOnLoad,
   setupAuthButtons,
-  checkRedirectResult
+  checkRedirectResult,
+  testFirebaseConnection
 }; 
