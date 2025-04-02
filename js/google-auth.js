@@ -28,6 +28,9 @@ function loadGoogleAuthAPI() {
 
 // Cấu hình Google OAuth
 function configureGoogleAuth() {
+    // Tắt Firebase Authentication UI
+    disableFirebaseAuth();
+    
     // Khởi tạo client Google
     window.googleClient = google.accounts.oauth2.initTokenClient({
         client_id: googleConfig.clientId,
@@ -40,6 +43,33 @@ function configureGoogleAuth() {
     
     // Gắn sự kiện cho các nút đăng nhập
     attachLoginEvents();
+}
+
+// Vô hiệu hóa Firebase Authentication
+function disableFirebaseAuth() {
+    if (window.firebase && window.firebase.auth) {
+        // Vô hiệu hóa sự kiện onAuthStateChanged
+        if (window.firebase.auth().onAuthStateChanged) {
+            window.firebase.auth().onAuthStateChanged = function(callback) {
+                console.log('Đã vô hiệu hóa onAuthStateChanged');
+                return function() {}; // Trả về hàm rỗng không làm gì
+            };
+        }
+        
+        // Ghi đè các hàm liên quan đến đăng nhập
+        if (window.firebaseui) {
+            if (window.firebaseui.auth) {
+                // Ẩn hoặc vô hiệu hóa UI
+                window.firebaseui.auth.AuthUI.prototype.start = function() {
+                    console.log('Đã vô hiệu hóa firebaseui start');
+                    return this;
+                };
+            }
+        }
+        
+        // Vô hiệu hóa các sự kiện đăng nhập tự động
+        window._firebaseAuthDisabled = true;
+    }
 }
 
 // Xử lý phản hồi từ Google sau khi xác thực
@@ -121,92 +151,287 @@ function saveUserData(userData, token) {
     }
 }
 
-// Kiểm tra trạng thái đăng nhập
+// Kiểm tra trạng thái đăng nhập khi trang tải
 function checkLoginStatus() {
-    const savedUser = localStorage.getItem('kalimbaUser');
+    console.log('Kiểm tra trạng thái đăng nhập');
     
-    if (savedUser) {
-        try {
-            currentUser = JSON.parse(savedUser);
+    try {
+        // Kiểm tra trong localStorage
+        const savedUser = localStorage.getItem('kalimbaUser');
+        
+        if (savedUser) {
+            console.log('Đã tìm thấy thông tin người dùng trong localStorage');
+            const userData = JSON.parse(savedUser);
             
-            // Kiểm tra thời gian token (1 giờ)
-            const currentTime = new Date().getTime();
-            const tokenAge = currentTime - currentUser.loginTime;
+            // Kiểm tra xem token có hết hạn chưa (1 giờ)
+            const tokenExpired = (new Date().getTime() - userData.loginTime) > (1000 * 60 * 60);
             
-            if (tokenAge < 3600000) { // Token còn hiệu lực (1 giờ = 3600000ms)
-                updateUIAfterLogin(currentUser);
-            } else {
-                // Token hết hạn, đăng xuất
-                logoutUser();
+            if (tokenExpired) {
+                console.log('Token đã hết hạn, xóa thông tin đăng nhập');
+                localStorage.removeItem('kalimbaUser');
+                currentUser = null;
+                updateUIForLogout();
+                return;
             }
-        } catch (error) {
-            console.error('Lỗi khi phân tích dữ liệu người dùng:', error);
-            localStorage.removeItem('kalimbaUser');
+            
+            // Đồng bộ với Firebase Auth nếu có thể
+            syncLoginWithFirebase(userData);
+            
+            // Cập nhật biến và giao diện
+            currentUser = userData;
+            updateUIAfterLogin(userData);
+            
+            return;
         }
+        
+        console.log('Không tìm thấy thông tin đăng nhập trong localStorage');
+        updateUIForLogout();
+    } catch (error) {
+        console.error('Lỗi khi kiểm tra trạng thái đăng nhập:', error);
+        updateUIForLogout();
     }
 }
 
-// Cập nhật giao diện sau khi đăng nhập
-function updateUIAfterLogin(user) {
-    // Cập nhật avatar và thông tin người dùng
-    document.querySelectorAll('.user-avatar').forEach(avatar => {
-        avatar.innerHTML = `<img src="${user.picture}" alt="${user.name}">`;
+// Đồng bộ trạng thái đăng nhập với Firebase Auth
+function syncLoginWithFirebase(userData) {
+    try {
+        if (window.firebase && window.firebase.auth) {
+            const currentFirebaseUser = window.firebase.auth().currentUser;
+            
+            if (!currentFirebaseUser) {
+                console.log('Đang đồng bộ trạng thái đăng nhập với Firebase Auth');
+                
+                // Tạo custom token hoặc credential nếu cần
+                // Đây chỉ là giải pháp tạm thời để đảm bảo Firebase biết người dùng đã đăng nhập
+                
+                // Lưu thông tin liên kết với Firebase
+                localStorage.setItem('kalimbaFirebaseAuth', 'true');
+                
+                // Thông báo cho các thành phần khác biết người dùng đã đăng nhập
+                if (window.dispatchEvent) {
+                    window.dispatchEvent(new CustomEvent('kalimbaUserLoggedIn', { 
+                        detail: userData 
+                    }));
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi khi đồng bộ với Firebase Auth:', error);
+        // Không làm gì thêm, vẫn cho phép đăng nhập thành công
+    }
+}
+
+/**
+ * Cập nhật giao diện sau khi đăng nhập thành công
+ * @param {Object} userData Dữ liệu người dùng
+ */
+function updateUIAfterLogin(userData) {
+    console.log('Cập nhật giao diện cho người dùng đã đăng nhập', userData);
+    
+    // Ẩn tất cả các nút đăng nhập
+    document.querySelectorAll('.login-with-google-btn, .login-btn').forEach(btn => {
+        btn.style.display = 'none';
     });
     
-    // Hiển thị avatar trên header
+    // Hiển thị avatar đã đăng nhập
     const headerAvatar = document.getElementById('header-avatar');
     if (headerAvatar) {
         headerAvatar.style.display = 'block';
         headerAvatar.classList.add('logged-in');
+        
+        // Thiết lập avatar nếu có
+        if (userData.picture) {
+            // Kiểm tra nếu đã có thẻ img
+            let avatarImg = headerAvatar.querySelector('img');
+            
+            // Nếu chưa có thẻ img, tạo mới
+            if (!avatarImg) {
+                headerAvatar.innerHTML = ''; // Xóa nội dung cũ (nếu có)
+                avatarImg = document.createElement('img');
+                avatarImg.className = 'user-photo';
+                headerAvatar.appendChild(avatarImg);
+            }
+            
+            // Cập nhật thuộc tính của thẻ img
+            avatarImg.src = userData.picture;
+            avatarImg.alt = userData.name || 'User';
+        } else {
+            // Nếu không có ảnh, hiển thị chữ cái đầu của tên
+            const userInitial = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+            headerAvatar.innerHTML = `<div class="user-avatar">${userInitial}</div>`;
+        }
+        
+        // Thêm sự kiện click để mở user menu
+        headerAvatar.addEventListener('click', toggleUserMenu);
     }
     
-    // Cập nhật menu người dùng
+    // Thay đổi nội dung dropdown user menu
     const userMenu = document.getElementById('user-menu');
     if (userMenu) {
-        const userName = userMenu.querySelector('.user-name');
-        const userEmail = userMenu.querySelector('.user-email');
+        // Tìm phần tử để hiển thị tên người dùng
+        const userNameElement = userMenu.querySelector('.user-name');
+        if (userNameElement) {
+            userNameElement.textContent = userData.name;
+        }
         
-        if (userName) userName.textContent = user.name;
-        if (userEmail) userEmail.textContent = user.email;
+        // Tìm phần tử để hiển thị email
+        const userEmailElement = userMenu.querySelector('.user-email');
+        if (userEmailElement) {
+            userEmailElement.textContent = userData.email;
+        }
         
-        // Ẩn menu người dùng (sẽ hiển thị khi click vào avatar)
-        userMenu.style.display = 'none';
-        userMenu.classList.remove('visible');
+        // Cập nhật avatar trong user menu header
+        const userMenuAvatar = userMenu.querySelector('.user-avatar');
+        if (userMenuAvatar && userData.picture) {
+            userMenuAvatar.innerHTML = '';
+            const img = document.createElement('img');
+            img.className = 'user-photo';
+            img.src = userData.picture;
+            img.alt = userData.name || 'User';
+            userMenuAvatar.appendChild(img);
+        } else if (userMenuAvatar) {
+            // Nếu không có ảnh, hiển thị chữ cái đầu của tên
+            const userInitial = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+            userMenuAvatar.textContent = userInitial;
+        }
     }
     
-    // Ẩn nút đăng nhập, hiển thị menu user
-    document.querySelectorAll('.login-with-google-btn').forEach(btn => {
-        btn.style.display = 'none';
-    });
-    
-    // Hiển thị phần tử chỉ dành cho người dùng đã đăng nhập
+    // Hiển thị các mục menu chỉ dành cho người dùng đã đăng nhập
     document.querySelectorAll('.user-only-menu-item').forEach(item => {
         item.style.display = 'flex';
     });
     
-    // Hiển thị nút đăng xuất
-    document.querySelectorAll('.logout').forEach(btn => {
+    // Hiển thị menu đăng xuất
+    const logoutMenuItem = document.querySelector('.logout');
+    if (logoutMenuItem) {
+        logoutMenuItem.style.display = 'flex';
+    }
+    
+    // Hiển thị tên người dùng trên thanh điều hướng (nếu có)
+    const navbarUserName = document.getElementById('navbar-user-name');
+    if (navbarUserName) {
+        navbarUserName.textContent = userData.name;
+        navbarUserName.parentElement.style.display = 'block';
+    }
+    
+    // Thêm sự kiện click outside để đóng menu
+    document.addEventListener('click', closeUserMenuOnOutsideClick);
+    
+    // Cập nhật avatar trong sidebar
+    updateSidebarAvatar(userData);
+    
+    // Kiểm tra và hiển thị mục Admin nếu là admin
+    if (window.AdminAuth && typeof window.AdminAuth.showAdminMenuItem === 'function') {
+        window.AdminAuth.showAdminMenuItem();
+    }
+}
+
+/**
+ * Mở/đóng user menu khi click vào avatar
+ */
+function toggleUserMenu(event) {
+    event.stopPropagation(); // Ngăn sự kiện lan ra document
+    
+    const userMenu = document.getElementById('user-menu');
+    
+    if (userMenu) {
+        if (userMenu.style.display === 'block') {
+            userMenu.style.display = 'none';
+        } else {
+            userMenu.style.display = 'block';
+        }
+    }
+}
+
+/**
+ * Đóng user menu khi click bên ngoài
+ */
+function closeUserMenuOnOutsideClick(event) {
+    const userMenu = document.getElementById('user-menu');
+    const headerAvatar = document.getElementById('header-avatar');
+    
+    if (userMenu && headerAvatar) {
+        // Nếu click không phải vào avatar và không phải vào menu
+        if (!headerAvatar.contains(event.target) && !userMenu.contains(event.target)) {
+            userMenu.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Cập nhật avatar trong sidebar
+ * @param {Object} userData Dữ liệu người dùng
+ */
+function updateSidebarAvatar(userData) {
+    const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
+    const loginSection = document.querySelector('.sidebar .login-section');
+    
+    if (sidebarAvatar) {
+        // Xóa icon Google
+        sidebarAvatar.innerHTML = '';
+        
+        if (userData && userData.picture) {
+            // Thêm ảnh đại diện
+            const img = document.createElement('img');
+            img.src = userData.picture;
+            img.alt = userData.name || 'User';
+            sidebarAvatar.appendChild(img);
+        } else {
+            // Sử dụng chữ cái đầu tên người dùng làm avatar
+            sidebarAvatar.textContent = userData && userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+        }
+    }
+    
+    // Ẩn nút đăng nhập trong sidebar
+    if (loginSection) {
+        loginSection.style.display = 'none';
+    }
+    
+    // Thêm tên người dùng vào sidebar
+    const userProfile = document.querySelector('.sidebar .user-profile');
+    if (userProfile) {
+        // Kiểm tra nếu đã có tên người dùng thì không thêm nữa
+        if (!userProfile.querySelector('.user-name')) {
+            const userName = document.createElement('div');
+            userName.className = 'user-name';
+            userName.textContent = userData && userData.name ? userData.name : 'Người dùng';
+            userProfile.appendChild(userName);
+        }
+    }
+}
+
+// Cập nhật giao diện khi đăng xuất
+function updateUIForLogout() {
+    console.log('Cập nhật giao diện cho người dùng chưa đăng nhập');
+    
+    // Hiển thị tất cả các nút đăng nhập
+    document.querySelectorAll('.login-with-google-btn').forEach(btn => {
         btn.style.display = 'flex';
     });
     
-    // Cập nhật sidebar nếu có
-    const sidebarLoginSection = document.querySelector('.sidebar .login-section');
-    if (sidebarLoginSection) {
-        sidebarLoginSection.innerHTML = `
-            <div class="user-info">
-                <div class="user-name">${user.name}</div>
-                <div class="user-email">${user.email}</div>
-                <button class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </button>
-            </div>
-        `;
-        
-        // Gắn sự kiện đăng xuất cho nút mới
-        const logoutBtn = sidebarLoginSection.querySelector('.logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', logoutUser);
-        }
+    // Ẩn avatar đăng nhập
+    const headerAvatar = document.getElementById('header-avatar');
+    if (headerAvatar) {
+        headerAvatar.style.display = 'none';
+        headerAvatar.classList.remove('logged-in');
+    }
+    
+    // Ẩn các mục menu chỉ dành cho người dùng đã đăng nhập
+    document.querySelectorAll('.user-only-menu-item').forEach(item => {
+        item.style.display = 'none';
+    });
+    
+    // Ẩn menu đăng xuất
+    const logoutMenuItem = document.getElementById('logout-menu-item');
+    if (logoutMenuItem) {
+        logoutMenuItem.style.display = 'none';
+    }
+    
+    // Ẩn tên người dùng trên thanh điều hướng (nếu có)
+    const navbarUserName = document.getElementById('navbar-user-name');
+    if (navbarUserName && navbarUserName.parentElement) {
+        navbarUserName.textContent = '';
+        navbarUserName.parentElement.style.display = 'none';
     }
 }
 

@@ -48,6 +48,9 @@
                 </h1>
             </div>
             <div class="header-right">
+                <div class="header-avatar">
+                    <!-- User avatar sẽ được thêm tự động vào đây bởi javascript -->
+                </div>
                 <button class="login-btn">
                     <i class="fas fa-sign-in-alt"></i>
                 </button>
@@ -87,9 +90,11 @@
                 <div class="user-avatar">
                     <i class="fab fa-google"></i>
                 </div>
-                <button class="login-with-google-btn">
-                    <i class="fab fa-google"></i> Đăng nhập bằng Google
-                </button>
+                <div class="login-section">
+                    <button class="login-with-google-btn">
+                        <i class="fab fa-google"></i> Đăng nhập bằng Google
+                    </button>
+                </div>
             </div>
         </div>
         <nav class="sidebar-menu">
@@ -195,11 +200,9 @@
             const html = `
                 <div class="song-info">
                     <div class="song-title">${song.title}</div>
-                    <div class="song-artist">${song.artist}</div>
-                    ${song.preview ? `<div class="song-chord">${song.preview}</div>` : ''}
                 </div>
                 <button class="favorite-btn" data-song-id="${song.id}">
-                    <i class="far fa-star"></i>
+                    <i class="far fa-heart"></i>
                 </button>
             `;
             
@@ -257,6 +260,176 @@
                     }
                 });
             });
+        }
+    </script>
+    
+    <script src="js/google-auth.js"></script>
+    <script src="js/firestore-operations.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Khởi tạo sự kiện đăng nhập
+            if (typeof attachLoginEvents === 'function') {
+                attachLoginEvents();
+            } else {
+                // Đợi nếu Google Auth script chưa được tải
+                setTimeout(function() {
+                    if (typeof attachLoginEvents === 'function') {
+                        attachLoginEvents();
+                    }
+                }, 1000);
+            }
+            
+            // Thiết lập tương tác với các phần tử
+            setupInteractions();
+            
+            // Tải danh sách bài hát
+            loadSongsList();
+        });
+        
+        // Thiết lập tương tác
+        function setupInteractions() {
+            // Nút menu cho mobile
+            const menuBtn = document.getElementById('menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            if (menuBtn && sidebar && overlay) {
+                menuBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                    // Cập nhật avatar trong sidebar khi mở sidebar
+                    updateSidebarAvatar();
+                });
+                
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            }
+            
+            // Nút back
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn) {
+                backBtn.addEventListener('click', function() {
+                    window.history.back();
+                });
+            }
+        }
+        
+        // Cập nhật avatar trong sidebar
+        function updateSidebarAvatar() {
+            try {
+                // Lấy thông tin người dùng từ localStorage
+                const userDataStr = localStorage.getItem('userData');
+                if (userDataStr) {
+                    const userData = JSON.parse(userDataStr);
+                    
+                    // Tìm avatar và login section trong sidebar
+                    const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
+                    const loginSection = document.querySelector('.sidebar .login-section');
+                    
+                    if (sidebarAvatar && loginSection) {
+                        // Xóa nội dung cũ
+                        sidebarAvatar.innerHTML = '';
+                        
+                        // Hiển thị avatar người dùng
+                        if (userData.picture) {
+                            const avatar = document.createElement('img');
+                            avatar.src = userData.picture;
+                            avatar.alt = userData.name;
+                            avatar.className = 'avatar-img';
+                            sidebarAvatar.appendChild(avatar);
+                        } else {
+                            // Nếu không có ảnh, hiển thị chữ cái đầu của tên người dùng
+                            const initial = document.createElement('div');
+                            initial.className = 'avatar-initial';
+                            initial.textContent = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+                            sidebarAvatar.appendChild(initial);
+                        }
+                        
+                        // Ẩn section đăng nhập
+                        loginSection.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Lỗi khi cập nhật avatar sidebar:', error);
+            }
+        }
+        
+        // Tải danh sách bài hát từ Firestore
+        function loadSongsList() {
+            try {
+                // Kiểm tra xem Firestore đã được khởi tạo chưa
+                if (typeof isFirestoreInitialized === 'function') {
+                    if (!isFirestoreInitialized()) {
+                        initFirestore();
+                    }
+                    
+                    // Lấy tham chiếu đến collection bài hát
+                    const songsCollection = firebase.firestore().collection('songs');
+                    
+                    // Hiển thị loading
+                    const songsList = document.querySelector('.songs');
+                    const loadingItem = document.querySelector('.loading-item');
+                    const noSongsMessage = document.querySelector('.no-songs');
+                    
+                    // Truy vấn Firestore
+                    songsCollection.get().then((querySnapshot) => {
+                        // Kiểm tra xem có kết quả nào không
+                        if (querySnapshot.empty) {
+                            // Ẩn loading, hiển thị thông báo không có bài hát
+                            if (loadingItem) loadingItem.style.display = 'none';
+                            if (noSongsMessage) noSongsMessage.style.display = 'flex';
+                            return;
+                        }
+                        
+                        // Xóa loading
+                        if (loadingItem) loadingItem.remove();
+                        
+                        // Tạo phần tử mới cho mỗi bài hát
+                        querySnapshot.forEach((doc) => {
+                            const songData = doc.data();
+                            const songId = doc.id;
+                            
+                            // Tạo phần tử bài hát
+                            const songItem = document.createElement('li');
+                            songItem.className = 'song-item';
+                            
+                            // Cấu trúc HTML cho mỗi bài hát
+                            songItem.innerHTML = `
+                                <a href="song-detail.html?id=${songId}" class="song-link">
+                                    <div class="song-info">
+                                        <h3 class="song-title">${songData.title || 'Không tiêu đề'}</h3>
+                                        <p class="song-artist">${songData.artist || 'Không nghệ sĩ'}</p>
+                                    </div>
+                                    <div class="song-meta">
+                                        <span class="song-key">${songData.key || 'C'}</span>
+                                        <i class="fas fa-chevron-right"></i>
+                                    </div>
+                                </a>
+                            `;
+                            
+                            // Thêm vào danh sách
+                            songsList.appendChild(songItem);
+                        });
+                    }).catch((error) => {
+                        console.error("Lỗi khi tải danh sách bài hát:", error);
+                        // Hiển thị thông báo lỗi
+                        if (loadingItem) {
+                            loadingItem.innerHTML = `
+                                <div class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span>Đã xảy ra lỗi khi tải danh sách bài hát. Vui lòng thử lại sau.</span>
+                                </div>
+                            `;
+                        }
+                    });
+                } else {
+                    console.error("Firestore không được khởi tạo");
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải danh sách bài hát:", error);
+            }
         }
     </script>
 </body>

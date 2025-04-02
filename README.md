@@ -84,46 +84,7 @@ Kalimba Chill/
         <div class="song-chord">Preview hợp âm</div>
     </div>
     <button class="favorite-btn">
-        <i class="far fa-star"></i>
+        <i class="far fa-heart"></i>
     </button>
 </li>
 ```
-
-### Thêm danh mục mới
-
-Để thêm danh mục mới, hãy thêm một mục mới vào danh sách `<div class="categories">` trong file `index.html`:
-
-```html
-<div class="category-item">
-    <div class="category-image" style="background-color: #color-code;">
-        <h2>Tên danh mục</h2>
-    </div>
-    <div class="category-title">Tên danh mục</div>
-</div>
-```
-
-### Thêm slide mới
-
-Để thêm slide mới vào slider, hãy thêm một mục mới vào danh sách `<div class="slider-wrapper">` trong file `index.html` và thêm một dot tương ứng:
-
-```html
-<!-- Thêm slide -->
-<div class="slide">
-    <img src="images/slider6.jpg" alt="Mô tả slide">
-    <div class="slide-content">
-        <h3>Tiêu đề slide</h3>
-        <p>Mô tả ngắn cho slide</p>
-    </div>
-</div>
-
-<!-- Thêm dot tương ứng -->
-<span class="dot" data-index="5"></span>
-```
-
-## Tác giả
-
-- [Tên tác giả]
-
-## Giấy phép
-
-Bản quyền © 2023 Kalimba Chill 

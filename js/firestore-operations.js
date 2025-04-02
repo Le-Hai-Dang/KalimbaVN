@@ -56,26 +56,78 @@ async function initFirestore() {
  */
 async function loadUserFavorites() {
   try {
-    // Kiểm tra xem người dùng đã đăng nhập chưa
+    // Kiểm tra xem người dùng đã đăng nhập qua Firebase Auth chưa
     const user = firebase.auth().currentUser;
-    if (!user) {
-      userFavorites = [];
-      return;
+    let userId = null;
+    
+    if (user) {
+      userId = user.uid;
+    } else {
+      // Kiểm tra từ localStorage
+      const savedUser = localStorage.getItem('kalimbaUser');
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        userId = userData.id;
+      } else {
+        userFavorites = [];
+        // Xóa danh sách yêu thích khỏi localStorage nếu không đăng nhập
+        localStorage.removeItem('kalimbaFavorites');
+        return;
+      }
     }
     
-    // Lấy danh sách bài hát yêu thích từ Firestore
-    const snapshot = await db.collection('users').doc(user.uid).collection('favorites').get();
-    
-    // Cập nhật danh sách yêu thích
-    userFavorites = [];
-    snapshot.forEach(doc => {
-      userFavorites.push(doc.id);
-    });
-    
-    console.log('Đã tải danh sách yêu thích:', userFavorites);
+    // Nếu có ID người dùng, lấy danh sách bài hát yêu thích từ Firestore
+    if (userId) {
+      try {
+        // Lấy danh sách bài hát yêu thích từ Firestore
+        const snapshot = await db.collection('users').doc(userId).collection('favorites').get();
+        
+        // Cập nhật danh sách yêu thích
+        userFavorites = [];
+        snapshot.forEach(doc => {
+          userFavorites.push(doc.id);
+        });
+        
+        // Lưu danh sách yêu thích vào localStorage để dùng trong profile
+        saveFavoritesToLocalStorage();
+        
+        console.log('Đã tải danh sách yêu thích từ Firestore:', userFavorites);
+      } catch (firestoreError) {
+        console.error('Lỗi khi tải danh sách yêu thích từ Firestore:', firestoreError);
+        
+        // Khôi phục từ localStorage nếu có lỗi
+        try {
+          const savedFavorites = localStorage.getItem('kalimbaFavorites');
+          if (savedFavorites) {
+            userFavorites = JSON.parse(savedFavorites);
+            console.log('Đã khôi phục danh sách yêu thích từ localStorage:', userFavorites);
+          }
+        } catch (localStorageError) {
+          console.error('Không thể khôi phục danh sách yêu thích từ localStorage:', localStorageError);
+          userFavorites = [];
+        }
+      }
+    } else {
+      // Không có ID người dùng, xóa danh sách yêu thích
+      userFavorites = [];
+      localStorage.removeItem('kalimbaFavorites');
+    }
   } catch (error) {
     console.error('Lỗi khi tải danh sách yêu thích:', error);
-    userFavorites = [];
+    
+    // Khôi phục từ localStorage nếu có lỗi
+    try {
+      const savedFavorites = localStorage.getItem('kalimbaFavorites');
+      if (savedFavorites) {
+        userFavorites = JSON.parse(savedFavorites);
+        console.log('Đã khôi phục danh sách yêu thích từ localStorage:', userFavorites);
+      } else {
+        userFavorites = [];
+      }
+    } catch (e) {
+      console.error('Không thể khôi phục danh sách yêu thích từ localStorage:', e);
+      userFavorites = [];
+    }
   }
 }
 
@@ -105,7 +157,7 @@ async function getSongsByCategory(categoryId, limit = 20) {
       // Kiểm tra kết quả
       if (snapshot.empty) {
         console.log(`Không tìm thấy bài hát nào thuộc thể loại ${categoryId}`);
-        return getMockSongsByCategory(categoryId);
+        return []; // Trả về mảng rỗng thay vì mock data
       }
       
       // Xử lý kết quả
@@ -134,7 +186,7 @@ async function getSongsByCategory(categoryId, limit = 20) {
         const snapshot = await query.limit(limit).get();
         
         if (snapshot.empty) {
-          return getMockSongsByCategory(categoryId);
+          return []; // Trả về mảng rỗng thay vì mock data
         }
         
         // Xử lý kết quả
@@ -158,86 +210,12 @@ async function getSongsByCategory(categoryId, limit = 20) {
       
       // Lỗi khác
       console.error('Lỗi khi tải danh sách bài hát:', error);
-      return getMockSongsByCategory(categoryId);
+      return []; // Trả về mảng rỗng thay vì mock data
     }
   } catch (error) {
     console.error('Lỗi khi tải danh sách bài hát:', error);
-    return getMockSongsByCategory(categoryId);
+    return []; // Trả về mảng rỗng thay vì mock data
   }
-}
-
-/**
- * Trả về danh sách bài hát mẫu khi không thể tải từ Firestore
- * @param {string} categoryId ID của thể loại
- * @returns {Array} Danh sách bài hát mẫu
- */
-function getMockSongsByCategory(categoryId) {
-  const categoryName = categoryNames[categoryId] || 'Danh sách bài hát';
-  
-  // Các bài hát mẫu cho mỗi thể loại
-  const mockSongs = {
-    'nhac-vang': [
-      { id: 'mock-nv-1', title: 'Dấu Tình Sầu', artist: 'Quang Lê', preview: '1 3 5 5 4 3 1' },
-      { id: 'mock-nv-2', title: 'Mưa Nửa Đêm', artist: 'Trường Vũ', preview: '5 5 6 5 3 2 1' },
-      { id: 'mock-nv-3', title: 'Nối Lại Tình Xưa', artist: 'Như Quỳnh', preview: '1 2 3 2 1 6 5' }
-    ],
-    'nhac-tre': [
-      { id: 'mock-nt-1', title: 'Nơi Này Có Anh', artist: 'Sơn Tùng MTP', preview: '3 5 6 5 3 5 6' },
-      { id: 'mock-nt-2', title: 'Có Chàng Trai Viết Lên Cây', artist: 'Phan Mạnh Quỳnh', preview: '1 1 5 6 5 3 2' }
-    ],
-    'indie': [
-      { id: 'mock-in-1', title: 'Từng Là Của Nhau', artist: 'Bùi Anh Tuấn', preview: '5 3 2 1 2 3 5 6' },
-      { id: 'mock-in-2', title: 'Thích Quá Rùi Nà', artist: 'CARA', preview: '1 2 3 5 6 5 3 2' }
-    ],
-    'de-choi': [
-      { id: 'mock-dc-1', title: 'Happy Birthday', artist: 'Traditional', preview: '1 1 2 1 4 3' },
-      { id: 'mock-dc-2', title: 'Twinkle Little Star', artist: 'Traditional', preview: '1 1 5 5 6 6 5' }
-    ],
-    'du-ca': [
-      { id: 'mock-duc-1', title: 'Cát Bụi', artist: 'Trịnh Công Sơn', preview: '3 3 5 6 5 3 2 1' },
-      { id: 'mock-duc-2', title: 'Diễm Xưa', artist: 'Trịnh Công Sơn', preview: '5 3 2 3 5 6 5 3' }
-    ],
-    'canon': [
-      { id: 'mock-ca-1', title: 'Canon in D', artist: 'Pachelbel', preview: '5 3 4 1 5 3 4 1' },
-      { id: 'mock-ca-2', title: 'Cannon Rock', artist: 'JerryC', preview: '5 3 4 1 5 3 4 1' }
-    ],
-    'c-g-am-f': [
-      { id: 'mock-cgamf-1', title: 'Let It Be', artist: 'The Beatles', preview: 'C G Am F' },
-      { id: 'mock-cgamf-2', title: 'No Woman No Cry', artist: 'Bob Marley', preview: 'C G Am F' }
-    ]
-  };
-  
-  // Nếu có mockSongs cho thể loại này, trả về danh sách tương ứng
-  if (mockSongs[categoryId]) {
-    return mockSongs[categoryId].map(song => ({
-      ...song,
-      category: categoryId,
-      categoryName: categoryName,
-      isFavorite: false
-    }));
-  }
-  
-  // Trường hợp không có mockSongs cho thể loại, trả về danh sách mặc định
-  return [
-    {
-      id: 'mock-default-1',
-      title: 'Bài hát mẫu 1',
-      artist: 'Ca sĩ không rõ',
-      category: categoryId,
-      categoryName: categoryName,
-      preview: '1 2 3 4 5 6 7',
-      isFavorite: false
-    },
-    {
-      id: 'mock-default-2',
-      title: 'Bài hát mẫu 2',
-      artist: 'Ca sĩ không rõ',
-      category: categoryId,
-      categoryName: categoryName,
-      preview: '7 6 5 4 3 2 1',
-      isFavorite: false
-    }
-  ];
 }
 
 /**
@@ -279,18 +257,29 @@ async function toggleFavoriteSong(songId) {
   try {
     // Kiểm tra xem người dùng đã đăng nhập chưa
     const user = firebase.auth().currentUser;
-    if (!user) {
-      if (window.firebaseUtils && window.firebaseUtils.showAlert) {
-        window.firebaseUtils.showAlert('Vui lòng đăng nhập để sử dụng tính năng này', 'warning');
+    let userId = null;
+    
+    if (user) {
+      userId = user.uid;
+    } else {
+      // Kiểm tra từ localStorage
+      const savedUser = localStorage.getItem('kalimbaUser');
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        userId = userData.id;
+      } else {
+        if (window.firebaseUtils && window.firebaseUtils.showAlert) {
+          window.firebaseUtils.showAlert('Vui lòng đăng nhập để sử dụng tính năng này', 'warning');
+        }
+        return null;
       }
-      return null;
     }
     
     // Khởi tạo Firestore nếu chưa khởi tạo
     await initFirestore();
     
     // Kiểm tra xem bài hát đã có trong yêu thích chưa
-    const docRef = db.collection('users').doc(user.uid).collection('favorites').doc(songId);
+    const docRef = db.collection('users').doc(userId).collection('favorites').doc(songId);
     const doc = await docRef.get();
     
     if (doc.exists) {
@@ -303,17 +292,32 @@ async function toggleFavoriteSong(songId) {
         userFavorites.splice(index, 1);
       }
       
+      // Lưu thông tin vào localStorage để dùng trong profile
+      saveFavoritesToLocalStorage();
+      
       return false;
     } else {
-      // Thêm vào yêu thích
+      // Lấy thông tin bài hát 
+      const songDoc = await db.collection('songs').doc(songId).get();
+      const songData = songDoc.exists ? songDoc.data() : {};
+      
+      // Thêm vào yêu thích với đầy đủ thông tin bài hát
       await docRef.set({
-        addedAt: new Date().toISOString()
+        addedAt: new Date().toISOString(),
+        songId: songId,
+        title: songData.title || 'Không có tiêu đề',
+        artist: songData.artist || 'Không có nghệ sĩ',
+        category: songData.category || 'unknown',
+        thumbnail: songData.thumbnail || ''
       });
       
       // Cập nhật cache
       if (!userFavorites.includes(songId)) {
         userFavorites.push(songId);
       }
+      
+      // Lưu thông tin vào localStorage để dùng trong profile
+      saveFavoritesToLocalStorage();
       
       return true;
     }
@@ -323,10 +327,335 @@ async function toggleFavoriteSong(songId) {
   }
 }
 
+/**
+ * Lưu danh sách bài hát yêu thích vào localStorage
+ */
+function saveFavoritesToLocalStorage() {
+  try {
+    localStorage.setItem('kalimbaFavorites', JSON.stringify(userFavorites));
+  } catch (error) {
+    console.error('Lỗi khi lưu danh sách yêu thích vào localStorage:', error);
+  }
+}
+
+/**
+ * Lấy chi tiết bài hát từ Firestore
+ * @param {string} songId ID của bài hát cần lấy chi tiết
+ * @returns {Promise<Object|null>} Thông tin chi tiết bài hát hoặc null nếu không tìm thấy
+ */
+async function getSongDetails(songId) {
+  try {
+    if (!songId) {
+      console.error('ID bài hát không hợp lệ');
+      return null;
+    }
+
+    // Khởi tạo Firestore nếu chưa khởi tạo
+    await initFirestore();
+    
+    console.log(`Đang tải chi tiết bài hát ${songId}...`);
+    
+    // Lấy thông tin bài hát từ Firestore
+    const songDoc = await db.collection('songs').doc(songId).get();
+    
+    if (!songDoc.exists) {
+      console.error(`Không tìm thấy bài hát với ID ${songId}`);
+      return null;
+    }
+    
+    // Lấy dữ liệu bài hát
+    const songData = songDoc.data() || {};
+    
+    // Debug: In dữ liệu bài hát
+    console.log('Dữ liệu bài hát từ Firestore:', songData);
+    console.log('Loại dữ liệu chordSheet:', typeof songData.chordSheet);
+    
+    // Xử lý chordSheet
+    let parsedChordSheet = null;
+    
+    // Chỉ xử lý nếu chordSheet tồn tại
+    if (songData.chordSheet) {
+      // Nếu là chuỗi
+      if (typeof songData.chordSheet === 'string') {
+        // Kiểm tra xem có phải chuỗi JSON không
+        if (songData.chordSheet.trim().startsWith('[') || songData.chordSheet.trim().startsWith('{')) {
+          try {
+            parsedChordSheet = JSON.parse(songData.chordSheet);
+            console.log('Đã parse chordSheet từ JSON string thành object');
+          } catch (parseError) {
+            console.error('Lỗi khi parse chordSheet:', parseError);
+            parsedChordSheet = songData.chordSheet; // Giữ nguyên chuỗi nếu parse lỗi
+          }
+        } else {
+          // Nếu không phải JSON, giữ nguyên chuỗi
+          parsedChordSheet = songData.chordSheet;
+        }
+      } else {
+        // Nếu không phải chuỗi, sử dụng trực tiếp (có thể là object)
+        parsedChordSheet = songData.chordSheet;
+      }
+    }
+    
+    // Trả về thông tin chi tiết bài hát
+    return {
+      id: songDoc.id,
+      title: songData.title || 'Không có tiêu đề',
+      artist: songData.artist || 'Không có nghệ sĩ',
+      category: songData.category || 'unknown',
+      tone: songData.tone || 'C',
+      capo: songData.capo !== undefined ? songData.capo : 0,
+      chordSheet: parsedChordSheet,
+      notes: Array.isArray(songData.notes) ? songData.notes : [],
+      lyrics: songData.lyrics || '',
+      thumbnail: songData.thumbnail || '',
+      createdAt: songData.createdAt || null,
+      isFavorite: userFavorites.includes(songDoc.id),
+      // Thêm các trường khác nếu có
+    };
+  } catch (error) {
+    console.error('Lỗi khi tải chi tiết bài hát:', error);
+    return null; // Trả về null thay vì throw error
+  }
+}
+
+/**
+ * Lưu bài hát vừa xem vào lịch sử xem gần đây
+ * @param {string} songId ID của bài hát vừa xem
+ * @returns {Promise<boolean>} True nếu lưu thành công, False nếu thất bại
+ */
+async function saveRecentView(songId) {
+  try {
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      return false; // Không lưu nếu chưa đăng nhập
+    }
+    
+    // Khởi tạo Firestore nếu chưa khởi tạo
+    await initFirestore();
+    
+    // Lưu thông tin bài hát vừa xem vào collection "recent_views"
+    await db.collection('users').doc(user.uid).collection('recent_views').doc(songId).set({
+      songId: songId,
+      viewedAt: new Date().toISOString()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi lưu bài hát vừa xem:', error);
+    return false;
+  }
+}
+
+/**
+ * Lấy danh sách bình luận của một bài hát
+ * @param {string} songId ID của bài hát cần lấy bình luận
+ * @returns {Promise<Array>} Danh sách bình luận
+ */
+async function getComments(songId) {
+  try {
+    // Khởi tạo Firestore nếu chưa khởi tạo
+    await initFirestore();
+    
+    console.log(`Đang tải bình luận cho bài hát ${songId}...`);
+    
+    // Lấy danh sách bình luận từ Firestore
+    const commentsSnapshot = await db.collection('songs').doc(songId)
+      .collection('comments')
+      .orderBy('createdAt', 'desc')
+      .limit(50)
+      .get();
+    
+    if (commentsSnapshot.empty) {
+      return [];
+    }
+    
+    // Xử lý kết quả
+    const comments = [];
+    
+    // Lấy thông tin người dùng hiện tại từ localStorage để so sánh
+    let currentUser = null;
+    const savedUser = localStorage.getItem('kalimbaUser');
+    if (savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser);
+      } catch (error) {
+        console.error('Lỗi khi parse thông tin người dùng:', error);
+      }
+    }
+    
+    for (const doc of commentsSnapshot.docs) {
+      const commentData = doc.data();
+      
+      // Sử dụng thông tin người dùng đã được lưu trong bình luận
+      let userName = commentData.userName || 'Người dùng ẩn danh';
+      let userAvatar = commentData.userAvatar || null;
+      
+      // Nếu bình luận thuộc về người dùng hiện tại, cập nhật tên và avatar từ localStorage
+      if (currentUser && commentData.userId === currentUser.id) {
+        userName = currentUser.name;
+        userAvatar = currentUser.picture;
+      }
+      
+      comments.push({
+        id: doc.id,
+        content: commentData.content || '',
+        userId: commentData.userId || null,
+        userName: userName,
+        userAvatar: userAvatar,
+        createdAt: commentData.createdAt || new Date().toISOString(),
+        isCurrentUser: currentUser && commentData.userId === currentUser.id
+      });
+    }
+    
+    return comments;
+  } catch (error) {
+    console.error('Lỗi khi tải bình luận:', error);
+    return [];
+  }
+}
+
+/**
+ * Thêm bình luận vào bài hát
+ * @param {string} songId ID của bài hát cần thêm bình luận
+ * @param {string} content Nội dung bình luận
+ * @returns {Promise<boolean>} True nếu thêm thành công, False nếu thất bại
+ */
+async function addComment(songId, content) {
+  try {
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    const user = firebase.auth().currentUser;
+    
+    // Nếu không có người dùng từ Firebase Auth, kiểm tra từ localStorage
+    let userId = null;
+    let userName = null;
+    let userPhoto = null;
+    
+    if (user) {
+      userId = user.uid;
+      userName = user.displayName || 'Người dùng ẩn danh';
+      userPhoto = user.photoURL;
+      
+      // Kiểm tra thêm từ localStorage để đảm bảo thông tin đầy đủ
+      const savedUser = localStorage.getItem('kalimbaUser');
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          if (userData && userData.name) {
+            userName = userData.name;
+          }
+          if (userData && userData.picture) {
+            userPhoto = userData.picture;
+          }
+        } catch (error) {
+          console.error('Lỗi khi parse thông tin người dùng từ localStorage:', error);
+        }
+      }
+    } else {
+      // Kiểm tra từ localStorage
+      const savedUser = localStorage.getItem('kalimbaUser');
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          userId = userData.id;
+          userName = userData.name || 'Người dùng ẩn danh';
+          userPhoto = userData.picture;
+        } catch (error) {
+          console.error('Lỗi khi parse thông tin người dùng từ localStorage:', error);
+          throw 'not-logged-in';
+        }
+      } else {
+        throw 'not-logged-in';
+      }
+    }
+    
+    console.log('Thông tin người dùng bình luận:', { userId, userName, userPhoto });
+    
+    // Khởi tạo Firestore nếu chưa khởi tạo
+    await initFirestore();
+    
+    // Thêm bình luận vào Firestore
+    const commentRef = await db.collection('songs').doc(songId).collection('comments').add({
+      content: content,
+      userId: userId,
+      userName: userName || 'Người dùng ẩn danh',
+      userAvatar: userPhoto || null,
+      createdAt: new Date().toISOString()
+    });
+    
+    console.log('Đã thêm bình luận:', commentRef.id);
+    return true;
+  } catch (error) {
+    console.error('Lỗi khi thêm bình luận:', error);
+    throw error;
+  }
+}
+
+/**
+ * Lấy danh sách bài hát yêu thích của người dùng hiện tại
+ * @returns {Promise<Array>} Danh sách bài hát yêu thích
+ */
+async function getFavoriteSongs() {
+  try {
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    const user = firebase.auth().currentUser;
+    let userId = null;
+    
+    if (user) {
+      userId = user.uid;
+    } else {
+      // Kiểm tra từ localStorage
+      const savedUser = localStorage.getItem('kalimbaUser');
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        userId = userData.id;
+      } else {
+        return [];
+      }
+    }
+    
+    // Khởi tạo Firestore nếu chưa khởi tạo
+    await initFirestore();
+    
+    // Lấy danh sách bài hát yêu thích từ Firestore
+    const snapshot = await db.collection('users').doc(userId).collection('favorites')
+      .orderBy('addedAt', 'desc')
+      .get();
+    
+    if (snapshot.empty) {
+      return [];
+    }
+    
+    // Xử lý kết quả
+    const songs = [];
+    snapshot.forEach(doc => {
+      const songData = doc.data();
+      songs.push({
+        id: doc.id,
+        title: songData.title || 'Không có tiêu đề',
+        artist: songData.artist || 'Không có nghệ sĩ',
+        category: songData.category || 'unknown',
+        thumbnail: songData.thumbnail || '',
+        addedAt: songData.addedAt || new Date().toISOString()
+      });
+    });
+    
+    return songs;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách bài hát yêu thích:', error);
+    return [];
+  }
+}
+
 // Export các hàm ra window object để sử dụng
 window.firestoreOperations = {
   initFirestore,
   getSongsByCategory,
+  getSongDetails,
   checkFavoriteStatus,
-  toggleFavoriteSong
+  toggleFavoriteSong,
+  saveRecentView,
+  getComments,
+  addComment,
+  getFavoriteSongs
 }; 

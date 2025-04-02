@@ -18,10 +18,20 @@ let isAdminUser = false;
  */
 function checkAdminStatus() {
   try {
-    // Lấy thông tin người dùng từ localStorage
+    // Kiểm tra xem đã có trạng thái admin trong sessionStorage chưa
+    const savedAdminStatus = sessionStorage.getItem('kalimbaAdminStatus');
+    if (savedAdminStatus === 'true') {
+      isAdminUser = true;
+      return true;
+    }
+    
+    // Nếu chưa có trong sessionStorage, kiểm tra từ localStorage
     const savedUser = localStorage.getItem('kalimbaUser');
     
     if (!savedUser) {
+      // Không có thông tin người dùng
+      isAdminUser = false;
+      sessionStorage.setItem('kalimbaAdminStatus', 'false');
       return false;
     }
     
@@ -30,14 +40,18 @@ function checkAdminStatus() {
     // Kiểm tra email có trong danh sách admin không
     if (user && user.email && ADMIN_EMAILS.includes(user.email)) {
       isAdminUser = true;
+      // Lưu trạng thái admin vào sessionStorage để duy trì trong phiên làm việc
+      sessionStorage.setItem('kalimbaAdminStatus', 'true');
       return true;
     }
     
     isAdminUser = false;
+    sessionStorage.setItem('kalimbaAdminStatus', 'false');
     return false;
   } catch (error) {
     console.error('Lỗi khi kiểm tra quyền admin:', error);
     isAdminUser = false;
+    sessionStorage.setItem('kalimbaAdminStatus', 'false');
     return false;
   }
 }
@@ -136,7 +150,7 @@ function redirectIfNotAdmin() {
  */
 function showAdminMenuItem() {
   if (checkAdminStatus()) {
-    // Thêm nút Admin vào menu người dùng
+    // Thêm nút Admin vào menu người dùng desktop
     const userMenu = document.querySelector('.user-menu-items');
     if (userMenu) {
       // Kiểm tra xem đã có menu item admin chưa
@@ -156,13 +170,38 @@ function showAdminMenuItem() {
         }
       }
     }
+    
+    // Thêm mục admin vào sidebar mobile
+    const sidebarMenu = document.querySelector('.sidebar-menu ul');
+    if (sidebarMenu) {
+      // Kiểm tra xem đã có menu item admin trong sidebar chưa
+      if (!sidebarMenu.querySelector('.admin-sidebar-item')) {
+        // Tạo phần tử menu Admin cho sidebar
+        const adminSidebarItem = document.createElement('li');
+        adminSidebarItem.innerHTML = '<a href="admin/index.html" class="admin-sidebar-item"><i class="fas fa-user-shield"></i> Quản trị viên</a>';
+        
+        // Thêm vào trước mục cài đặt hoặc mục cuối cùng
+        const settingsItem = sidebarMenu.querySelector('li:last-child');
+        if (settingsItem) {
+          sidebarMenu.insertBefore(adminSidebarItem, settingsItem);
+        } else {
+          sidebarMenu.appendChild(adminSidebarItem);
+        }
+      }
+    }
   }
 }
 
 // Khởi tạo khi trang tải xong
 document.addEventListener('DOMContentLoaded', () => {
   // Kiểm tra và hiển thị menu Admin nếu có quyền
+  checkAdminStatus();
   showAdminMenuItem();
+  
+  // Kiểm tra điều hướng nếu đang ở trang admin
+  if (window.location.href.includes('/admin/')) {
+    redirectIfNotAdmin();
+  }
 });
 
 // Export các hàm ra window object để sử dụng trong HTML

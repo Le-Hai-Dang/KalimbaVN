@@ -873,19 +873,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // Tải dữ liệu trang
     loadPageData();
     
-    // Sidebar toggle
-    menuBtn = document.getElementById('menu-btn');
-    sidebar = document.getElementById('sidebar');
-    overlay = document.getElementById('overlay');
-    
+    // Xử lý menu mobile
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
     if (menuBtn) {
-        menuBtn.addEventListener('click', toggleSidebar);
-        console.log('Đã gắn sự kiện cho nút menu');
+        menuBtn.addEventListener('click', function() {
+            if (sidebar && overlay) {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            }
+        });
     }
-    
+
     if (overlay) {
-        overlay.addEventListener('click', closeSidebar);
-        console.log('Đã gắn sự kiện cho overlay');
+        overlay.addEventListener('click', function() {
+            if (sidebar && overlay) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
     }
     
     // Xử lý đăng nhập Google
@@ -925,6 +933,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Khởi tạo các tính năng khác
     initOtherFeatures();
+
+    // Xử lý sự kiện đăng nhập từ sidebar
+    const sidebarLoginBtn = document.querySelector('.sidebar .login-with-google-btn');
+    if (sidebarLoginBtn) {
+        sidebarLoginBtn.addEventListener('click', function() {
+            // Đóng sidebar
+            if (sidebar && overlay) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+            
+            // Gọi hàm đăng nhập từ google-auth.js
+            if (window.initiateGoogleLogin) {
+                window.initiateGoogleLogin();
+            }
+        });
+    }
 });
 
 // Thay thế export với window object để sử dụng trong môi trường browser

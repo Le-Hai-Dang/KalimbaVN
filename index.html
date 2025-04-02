@@ -16,6 +16,9 @@
     <script src="js/error-handler.js"></script>
     <script src="js/admin-auth.js"></script>
     
+    <!-- Script vô hiệu hóa Firebase Auth UI -->
+    <script src="js/disable-firebase-auth-ui.js"></script>
+    
     <!-- Firebase SDK - Chỉ cần Firestore và Analytics -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -95,6 +98,9 @@
                 </h1>
             </div>
             <div class="header-right">
+                <div class="header-avatar">
+                    <!-- User avatar sẽ được thêm tự động vào đây bởi javascript -->
+                </div>
                 <button class="login-btn">
                     <i class="fas fa-sign-in-alt"></i>
                 </button>
@@ -122,7 +128,7 @@
                         <i class="fab fa-google"></i> Đăng nhập
                     </button>
                     <div class="header-avatar" id="header-avatar">
-                        <div class="user-avatar"></div>
+                        <!-- User avatar sẽ được thêm tự động vào đây bởi javascript -->
                     </div>
                     <div class="user-menu" id="user-menu">
                         <div class="user-menu-header">
@@ -398,7 +404,7 @@
             </div>
             <nav class="sidebar-menu">
                 <ul>
-                    <li><a href="#"><i class="fas fa-home"></i> Trang chủ</a></li>
+                    <li><a href="#" class="active"><i class="fas fa-home"></i> Trang chủ</a></li>
                     <li><a href="#"><i class="fas fa-music"></i> Bài hát</a></li>
                     <li><a href="#"><i class="fas fa-book"></i> Khóa học</a></li>
                     <li><a href="#"><i class="fas fa-list"></i> Playlist của tôi</a></li>
@@ -447,7 +453,88 @@
     
     <!-- Google Auth Integration -->
     <script src="js/google-auth.js"></script>
-
+    <script src="js/firestore-operations.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Thiết lập tương tác với các phần tử trên trang
+            setupInteractions();
+            
+            // Khởi tạo sự kiện đăng nhập nếu chưa được khởi tạo tự động
+            if (typeof attachLoginEvents === 'function') {
+                attachLoginEvents();
+            } else {
+                // Đợi nếu Google Auth script chưa được tải
+                setTimeout(function() {
+                    if (typeof attachLoginEvents === 'function') {
+                        attachLoginEvents();
+                    }
+                }, 1000);
+            }
+        });
+        
+        // Thiết lập tương tác
+        function setupInteractions() {
+            // Nút menu cho mobile
+            const menuBtn = document.getElementById('menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            if (menuBtn && sidebar && overlay) {
+                menuBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                    // Cập nhật avatar trong sidebar khi mở sidebar
+                    updateSidebarAvatar();
+                });
+                
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            }
+        }
+        
+        // Cập nhật avatar trong sidebar
+        function updateSidebarAvatar() {
+            try {
+                // Lấy thông tin người dùng từ localStorage
+                const userDataStr = localStorage.getItem('userData');
+                if (userDataStr) {
+                    const userData = JSON.parse(userDataStr);
+                    
+                    // Tìm avatar và login section trong sidebar
+                    const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
+                    const loginSection = document.querySelector('.sidebar .login-section');
+                    
+                    if (sidebarAvatar && loginSection) {
+                        // Xóa nội dung cũ
+                        sidebarAvatar.innerHTML = '';
+                        
+                        // Hiển thị avatar người dùng
+                        if (userData.picture) {
+                            const avatar = document.createElement('img');
+                            avatar.src = userData.picture;
+                            avatar.alt = userData.name;
+                            avatar.className = 'avatar-img';
+                            sidebarAvatar.appendChild(avatar);
+                        } else {
+                            // Nếu không có ảnh, hiển thị chữ cái đầu của tên người dùng
+                            const initial = document.createElement('div');
+                            initial.className = 'avatar-initial';
+                            initial.textContent = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+                            sidebarAvatar.appendChild(initial);
+                        }
+                        
+                        // Ẩn section đăng nhập
+                        loginSection.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Lỗi khi cập nhật avatar sidebar:', error);
+            }
+        }
+    </script>
+    
     <!-- Script ẩn thông báo lỗi quyền -->
     <script>
       // Hàm ẩn thông báo lỗi quyền
@@ -480,6 +567,47 @@
       
       // Thiết lập thực thi định kỳ
       setInterval(hidePermissionErrors, 500);
+    </script>
+    
+    <!-- Script xử lý tình trạng đăng nhập -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Ẩn Firebase Auth UI
+        const firebaseAuthContainer = document.querySelector('.firebaseui-container');
+        if (firebaseAuthContainer) {
+          firebaseAuthContainer.style.display = 'none';
+        }
+        
+        // Kiểm tra nếu người dùng đã đăng nhập
+        const savedUser = localStorage.getItem('kalimbaUser');
+        if (savedUser) {
+          // Ẩn tất cả các nút đăng nhập Google
+          document.querySelectorAll('.login-with-google-btn').forEach(btn => {
+            btn.style.display = 'none';
+          });
+          
+          // Hiển thị avatar đăng nhập
+          const headerAvatar = document.getElementById('header-avatar');
+          if (headerAvatar) {
+            headerAvatar.style.display = 'block';
+            headerAvatar.classList.add('logged-in');
+          }
+          
+          // Hiển thị các mục menu chỉ dành cho người dùng đã đăng nhập
+          document.querySelectorAll('.user-only-menu-item').forEach(item => {
+            item.style.display = 'flex';
+          });
+        }
+        
+        // Ngăn chặn Firebase Authentication tự động hiển thị
+        if (window.firebase && window.firebase.auth) {
+          // Tắt UI tự động của Firebase Auth
+          const firebaseUIElements = document.querySelectorAll('.firebaseui-auth-container');
+          firebaseUIElements.forEach(el => {
+            el.style.display = 'none';
+          });
+        }
+      });
     </script>
 </body>
 </html> 

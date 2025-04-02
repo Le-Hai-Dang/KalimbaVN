@@ -46,169 +46,67 @@
                     <img src="images/kalimba-chill-logo.jpg" alt="Kalimba Chill Logo" class="mobile-logo">
                     <span class="logo-text">Thành Phố Buồn</span>
                 </h1>
+                <div class="song-actions">
+                    <button class="heart-btn" id="heart-favorite-btn" title="Thêm vào yêu thích">
+                        <i class="far fa-heart"></i>
+                    </button>
+                    <button class="share-btn" id="share-song-btn" title="Chia sẻ bài hát">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                </div>
             </div>
             <div class="header-right">
-                <button class="favorite-btn">
-                    <i class="far fa-star"></i>
-                </button>
-                <button class="login-btn">
-                    <i class="fas fa-sign-in-alt"></i>
-                </button>
+                <div class="header-avatar">
+                    <!-- User avatar sẽ được thêm tự động vào đây bởi javascript -->
+                </div>
+                <!-- Các nút khác nếu có -->
             </div>
         </header>
 
         <div class="song-meta">
-            <div class="artist">Đàm Vĩnh Hưng</div>
             <div class="song-info">
-                <span class="tone">Tone: Em</span>
-                <span class="separator">|</span>
-                <span class="capo">Capo: 0</span>
+                <!-- Các thông tin meta của bài hát đã được loại bỏ -->
             </div>
-        </div>
-
-        <div class="controls">
-            <button class="btn tone-up"><i class="fas fa-arrow-up"></i> Tăng Tone</button>
-            <button class="btn tone-down"><i class="fas fa-arrow-down"></i> Giảm Tone</button>
-            <button class="btn transpose"><i class="fas fa-exchange-alt"></i> Chuyển Tone</button>
-        </div>
-
-        <div class="tab-controls">
-            <button class="tab-btn active">Hợp Âm</button>
-            <button class="tab-btn">Tab Kalimba</button>
-            <button class="tab-btn">Lời Bài Hát</button>
         </div>
 
         <main class="song-content">
             <div class="chord-sheet">
-                <h3>Intro: [Em] [C] [Am] [Em] [B7] [Em]</h3>
-                
-                <div class="verse">
-                    <div class="line">
-                        <span class="chord">[Em]</span>
-                        <span class="lyric">Thành phố nào nhớ không</span>
-                        <span class="chord">[G]</span>
-                        <span class="lyric">em?</span>
-                    </div>
-                    <div class="line">
-                        <span class="lyric">Nơi chúng mình quen nhau</span>
-                    </div>
-                    <div class="line">
-                        <span class="chord">[C]</span>
-                        <span class="lyric">Thành phố nào vui không</span>
-                        <span class="chord">[Am]</span>
-                        <span class="lyric">em?</span>
-                    </div>
-                    <div class="line">
-                        <span class="lyric">Khi chúng mình xa nhau</span>
-                    </div>
-                </div>
-                
-                <div class="verse">
-                    <div class="line">
-                        <span class="chord">[Em]</span>
-                        <span class="lyric">Thành phố buồn khi hai đứa</span>
-                        <span class="chord">[Am]</span>
-                        <span class="lyric">mình</span>
-                    </div>
-                    <div class="line">
-                        <span class="chord">[D]</span>
-                        <span class="lyric">Chưa</span>
-                        <span class="chord">[G]</span>
-                        <span class="lyric">bao giờ</span>
-                        <span class="chord">[B7]</span>
-                        <span class="lyric">gặp nhau</span>
-                    </div>
-                    <div class="line">
-                        <span class="chord">[Em]</span>
-                        <span class="lyric">Em ở nơi</span>
-                        <span class="chord">[C]</span>
-                        <span class="lyric">nào?</span>
-                    </div>
-                    <div class="line">
-                        <span class="chord">[Am]</span>
-                        <span class="lyric">Anh đi tìm</span>
-                        <span class="chord">[B7]</span>
-                        <span class="lyric">em về</span>
-                    </div>
+                <!-- Nội dung hợp âm sẽ được tải từ Firebase -->
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Đang tải hợp âm bài hát...</span>
                 </div>
             </div>
-
-            <div class="kalimba-tab" style="display: none;">
-                <h3>Tab Kalimba - Thành Phố Buồn</h3>
-                
-                <div class="tab-intro">
-                    <p>Sử dụng Kalimba 17 phím, thang âm C Major</p>
-                </div>
-                
-                <div class="tab-notation">
-                    <pre>
-Intro: 
-2 2' 3' 4' 3' 2'
-5 5 6 7 6 5
-
-Verse 1:
-2 2' 3' 4' 3' 2'
-5 5 6 7 6 5
-1' 1' 7 6 5 6
-7 6 5 3 2
-
-Chorus:
-5 5 6 7 1' 2'
-3 3 4 5 6 7
-2' 2' 3' 4' 3' 2'
-1' 7 6 5 3 2
-                    </pre>
-                </div>
-                
-                <div class="tab-note">
-                    <p>Chú thích:</p>
-                    <ul>
-                        <li>Số không có dấu: Phím trung tâm và thấp</li>
-                        <li>Số có dấu ': Phím cao</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="lyrics-only" style="display: none;">
-                <h3>Lời bài hát - Thành Phố Buồn</h3>
-                
-                <div class="lyrics">
-                    <p>Thành phố nào nhớ không em?<br>
-                    Nơi chúng mình quen nhau<br>
-                    Thành phố nào vui không em?<br>
-                    Khi chúng mình xa nhau</p>
-
-                    <p>Thành phố buồn khi hai đứa mình<br>
-                    Chưa bao giờ gặp nhau<br>
-                    Em ở nơi nào?<br>
-                    Anh đi tìm em về</p>
-
-                    <p>Biết đâu tình cờ<br>
-                    Em có về ngang qua<br>
-                    Thành phố này vẫn buồn<br>
-                    Mây hắt hiu bay về chiều</p>
-
-                    <p>Biết đâu tình cờ<br>
-                    Em có nhìn thấy anh<br>
-                    Thành phố này vẫn đau<br>
-                    Con tim hoài mong nhớ</p>
-                </div>
+            
+            <div class="song-lyrics-and-notes">
+                <!-- Lời bài hát và nốt nhạc sẽ được hiển thị ở đây, xen kẽ nhau -->
             </div>
         </main>
 
-        <div class="footer-actions">
-            <button class="action-btn">
-                <i class="fas fa-play"></i>
-                <span>Nghe bài hát</span>
-            </button>
-            <button class="action-btn">
-                <i class="fas fa-download"></i>
-                <span>Tải xuống</span>
-            </button>
-            <button class="action-btn">
-                <i class="fas fa-comments"></i>
-                <span>Bình luận</span>
-            </button>
+        <!-- Phần bình luận -->
+        <div class="comments-section">
+            <h3>Bình luận (0)</h3>
+            
+            <div class="comment-form">
+                <div class="user-comment-avatar">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                <div class="comment-input-container">
+                    <textarea id="comment-text" placeholder="Nhập bình luận của bạn..."></textarea>
+                    <button id="submit-comment" class="submit-comment-btn">
+                        <i class="fas fa-paper-plane"></i> Gửi
+                    </button>
+                </div>
+            </div>
+            
+            <div class="comments-list">
+                <!-- Bình luận sẽ được hiển thị ở đây -->
+                <div class="no-comments-message">
+                    <p>Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
+                </div>
+            </div>
         </div>
 
         <div class="footer-links">
@@ -295,6 +193,10 @@ Chorus:
                 return;
             }
             
+            // Cập nhật avatar và giao diện người dùng
+            updateCommentAvatar();
+            updateSidebarAvatar();
+            
             // Lấy ID bài hát từ URL
             const urlParams = new URLSearchParams(window.location.search);
             const songId = urlParams.get('id');
@@ -312,66 +214,166 @@ Chorus:
                 
                 if (!song) {
                     console.error('Không tìm thấy thông tin bài hát với ID:', songId);
-                    document.querySelector('.song-content').innerHTML = 
-                        '<div class="error-message">Không tìm thấy thông tin bài hát. <a href="songs.html">Quay lại danh sách</a></div>';
+                    document.querySelector('.song-content').innerHTML = `
+                        <div class="error-message">
+                            <h3>Bài hát không tồn tại</h3>
+                            <p>Không tìm thấy thông tin bài hát bạn đang tìm kiếm.</p>
+                            <p><a href="songs.html" class="btn"><i class="fas fa-arrow-left"></i> Quay lại danh sách bài hát</a></p>
+                        </div>
+                    `;
+                    
+                    // Cập nhật tiêu đề trang
+                    document.title = 'Không tìm thấy bài hát - Kalimba Chill';
+                    document.querySelector('.logo-text').textContent = 'Không tìm thấy';
+                    
                     return;
                 }
                 
+                console.log('Dữ liệu bài hát để hiển thị:', song);
+                
                 // Cập nhật tiêu đề trang và thông tin meta
-                document.title = `${song.title} - ${song.artist} - Kalimba Chill`;
-                document.querySelector('.logo-text').textContent = song.title;
-                document.querySelector('.artist').textContent = song.artist;
+                document.title = `${song.title || 'Bài hát'} - Kalimba Chill`;
                 
-                // Cập nhật thông tin tone và capo
-                if (song.tone) {
-                    document.querySelector('.tone').textContent = `Tone: ${song.tone}`;
-                }
-                if (song.capo !== undefined) {
-                    document.querySelector('.capo').textContent = `Capo: ${song.capo}`;
+                // Cập nhật tiêu đề bài hát
+                const logoTextElement = document.querySelector('.logo-text');
+                if (logoTextElement) {
+                    logoTextElement.textContent = song.title || 'Không có tiêu đề';
                 }
                 
-                // Cập nhật nội dung bài hát nếu cần
-                if (song.chordSheet) {
-                    document.querySelector('.chord-sheet').innerHTML = formatChordSheet(song.chordSheet);
+                // Cập nhật nội dung bài hát
+                const chordSheetElement = document.querySelector('.chord-sheet');
+                if (chordSheetElement) {
+                    try {
+                        if (song.chordSheet) {
+                            chordSheetElement.innerHTML = formatChordSheet(song.chordSheet);
+                        } else {
+                            // Ẩn phần chord-sheet khi không có dữ liệu hợp âm
+                            chordSheetElement.style.display = 'none';
+                        }
+                    } catch (formatError) {
+                        console.error('Lỗi khi định dạng hợp âm:', formatError);
+                        chordSheetElement.innerHTML = `
+                            <div class="message-box">
+                                <p>Đã xảy ra lỗi khi hiển thị hợp âm.</p>
+                                <p>Chi tiết lỗi: ${formatError.message || 'Không xác định'}</p>
+                            </div>
+                        `;
+                    }
                 }
-                if (song.kalimbaTab) {
-                    document.querySelector('.kalimba-tab pre').textContent = song.kalimbaTab;
-                }
-                if (song.lyrics) {
-                    document.querySelector('.lyrics-only .lyrics').innerHTML = formatLyrics(song.lyrics);
+                
+                // Hiển thị lời bài hát và nốt nhạc xen kẽ nhau
+                const lyricsAndNotesElement = document.querySelector('.song-lyrics-and-notes');
+                if (lyricsAndNotesElement) {
+                    try {
+                        if ((song.lyrics && song.lyrics.length > 0) || (song.notes && song.notes.length > 0)) {
+                            lyricsAndNotesElement.innerHTML = formatLyricsAndNotes(song.lyrics, song.notes);
+                        } else {
+                            // Ẩn phần lời bài hát và nốt nhạc khi không có dữ liệu
+                            lyricsAndNotesElement.style.display = 'none';
+                        }
+                    } catch (formatError) {
+                        console.error('Lỗi khi định dạng lời bài hát và nốt nhạc:', formatError);
+                        lyricsAndNotesElement.innerHTML = `
+                            <div class="message-box">
+                                <p>Đã xảy ra lỗi khi hiển thị lời bài hát và nốt nhạc.</p>
+                                <p>Chi tiết lỗi: ${formatError.message || 'Không xác định'}</p>
+                            </div>
+                        `;
+                    }
                 }
                 
                 // Lưu vào lượt xem gần đây
-                window.firestoreOperations.saveRecentView(songId);
+                if (window.firestoreOperations.saveRecentView) {
+                    try {
+                        window.firestoreOperations.saveRecentView(songId).catch(error => {
+                            console.warn('Không thể lưu lượt xem gần đây:', error);
+                        });
+                    } catch (error) {
+                        console.warn('Lỗi khi lưu lượt xem gần đây:', error);
+                    }
+                }
                 
                 // Kiểm tra trạng thái yêu thích
-                const isFavorite = await window.firestoreOperations.checkFavoriteStatus(songId);
-                updateFavoriteButton(isFavorite);
+                try {
+                    const isFavorite = await window.firestoreOperations.checkFavoriteStatus(songId);
+                    updateAllFavoriteButtons(isFavorite);
+                } catch (error) {
+                    console.warn('Lỗi khi kiểm tra trạng thái yêu thích:', error);
+                }
                 
                 // Thiết lập các chức năng tương tác
                 setupInteractions(songId);
                 
+                // Tải bình luận
+                loadComments(songId);
+                
             } catch (error) {
                 console.error('Lỗi khi tải chi tiết bài hát:', error);
-                document.querySelector('.song-content').innerHTML = 
-                    '<div class="error-message">Đã xảy ra lỗi khi tải thông tin bài hát. <a href="songs.html">Quay lại danh sách</a></div>';
+                document.querySelector('.song-content').innerHTML = `
+                    <div class="error-message">
+                        <h3>Đã xảy ra lỗi</h3>
+                        <p>Không thể tải thông tin bài hát. Vui lòng thử lại sau.</p>
+                        <p>Chi tiết lỗi: ${error.message || 'Không xác định'}</p>
+                        <p><a href="songs.html" class="btn"><i class="fas fa-arrow-left"></i> Quay lại danh sách bài hát</a></p>
+                    </div>
+                `;
+                
+                // Cập nhật tiêu đề
+                document.title = 'Lỗi - Kalimba Chill';
             }
         });
         
         // Định dạng hợp âm từ dữ liệu
         function formatChordSheet(chordSheet) {
+            console.log('Dữ liệu chordSheet để hiển thị:', chordSheet);
+            
+            // Nếu không có dữ liệu
+            if (chordSheet === null || chordSheet === undefined) {
+                return `
+                    <div class="message-box">
+                        <p>Hợp âm của bài hát này hiện chưa có.</p>
+                    </div>
+                `;
+            }
+            
+            // Nếu đã là HTML (string)
             if (typeof chordSheet === 'string') {
-                return chordSheet; // Nếu đã là HTML thì giữ nguyên
-            } else if (Array.isArray(chordSheet)) {
+                // Nếu là chuỗi rỗng hoặc chỉ có khoảng trắng
+                if (!chordSheet.trim()) {
+                    return `
+                        <div class="message-box">
+                            <p>Hợp âm của bài hát này hiện chưa có.</p>
+                        </div>
+                    `;
+                }
+                return chordSheet;
+            }
+            
+            // Nếu là mảng đơn giản (không phải đối tượng đặc biệt cho chord)
+            if (Array.isArray(chordSheet) && chordSheet.every(item => typeof item === 'string')) {
+                return `
+                    <div class="chord-simple">
+                        ${chordSheet.map(line => `<div class="line"><span class="lyric">${line}</span></div>`).join('')}
+                    </div>
+                `;
+            }
+            
+            // Nếu là mảng các đoạn phức tạp
+            if (Array.isArray(chordSheet)) {
                 let html = '';
                 
-                // Xử lý intro nếu có
-                if (chordSheet.intro) {
+                // Xử lý intro nếu có và đúng định dạng
+                if (chordSheet.intro && typeof chordSheet.intro === 'string') {
                     html += `<h3>Intro: ${chordSheet.intro}</h3>`;
                 }
                 
-                // Xử lý các đoạn
+                // Xử lý từng đoạn
                 chordSheet.forEach(section => {
+                    if (!section || typeof section !== 'object') {
+                        return; // Bỏ qua phần tử không hợp lệ
+                    }
+                    
+                    // Xác định loại đoạn
                     if (section.type === 'verse') {
                         html += '<div class="verse">';
                     } else if (section.type === 'chorus') {
@@ -380,74 +382,135 @@ Chorus:
                         html += '<div class="section">';
                     }
                     
-                    if (section.title) {
+                    // Thêm tiêu đề nếu có
+                    if (section.title && typeof section.title === 'string') {
                         html += `<h4>${section.title}</h4>`;
                     }
                     
-                    section.lines.forEach(line => {
-                        html += '<div class="line">';
-                        
-                        if (typeof line === 'string') {
-                            html += `<span class="lyric">${line}</span>`;
-                        } else if (Array.isArray(line)) {
-                            line.forEach(part => {
-                                if (part.chord) {
-                                    html += `<span class="chord">[${part.chord}]</span>`;
-                                }
-                                if (part.lyric) {
-                                    html += `<span class="lyric">${part.lyric}</span>`;
-                                }
-                            });
-                        }
-                        
-                        html += '</div>'; // Đóng .line
-                    });
+                    // Xử lý từng dòng
+                    if (Array.isArray(section.lines)) {
+                        section.lines.forEach(line => {
+                            html += '<div class="line">';
+                            
+                            // Nếu dòng là chuỗi đơn giản
+                            if (typeof line === 'string') {
+                                html += `<span class="lyric">${line}</span>`;
+                            } 
+                            // Nếu dòng là mảng các phần tử (hợp âm + lời)
+                            else if (Array.isArray(line)) {
+                                line.forEach(part => {
+                                    if (!part || typeof part !== 'object') {
+                                        return; // Bỏ qua phần tử không hợp lệ
+                                    }
+                                    
+                                    if (part.chord) {
+                                        html += `<span class="chord">[${part.chord}]</span>`;
+                                    }
+                                    if (part.lyric) {
+                                        html += `<span class="lyric">${part.lyric}</span>`;
+                                    }
+                                });
+                            }
+                            
+                            html += '</div>'; // Đóng .line
+                        });
+                    }
                     
                     html += '</div>'; // Đóng .verse hoặc .chorus
                 });
                 
-                return html;
+                if (html) {
+                    return html;
+                } else {
+                    return `
+                        <div class="message-box">
+                            <p>Định dạng hợp âm không hỗ trợ.</p>
+                        </div>
+                    `;
+                }
             }
             
-            return '<p>Không có dữ liệu hợp âm</p>';
+            // Xử lý đối tượng đơn giản
+            if (typeof chordSheet === 'object' && chordSheet !== null) {
+                try {
+                    // Thử chuyển đối tượng thành chuỗi JSON để hiển thị
+                    const jsonString = JSON.stringify(chordSheet, null, 2);
+                    return `
+                        <div class="chord-debug">
+                            <p><strong>Dữ liệu hợp âm (định dạng chưa được xử lý):</strong></p>
+                            <pre>${jsonString}</pre>
+                        </div>
+                    `;
+                } catch (e) {
+                    console.error('Lỗi khi chuyển đối tượng thành JSON:', e);
+                }
+            }
+            
+            // Trường hợp không xử lý được
+            return `
+                <div class="message-box">
+                    <p>Định dạng hợp âm không hỗ trợ.</p>
+                </div>
+            `;
         }
         
-        // Định dạng lời bài hát
-        function formatLyrics(lyrics) {
-            if (typeof lyrics === 'string') {
-                // Chuyển đổi các dòng mới thành thẻ <br>
-                return lyrics.replace(/\n/g, '<br>');
-            } else if (Array.isArray(lyrics)) {
-                let html = '';
-                
-                lyrics.forEach(section => {
-                    if (section.type === 'verse') {
-                        html += '<div class="verse">';
-                    } else if (section.type === 'chorus') {
-                        html += '<div class="chorus">';
-                    } else {
-                        html += '<div class="section">';
-                    }
-                    
-                    if (section.title) {
-                        html += `<h4>${section.title}</h4>`;
-                    }
-                    
-                    section.lines.forEach(line => {
-                        if (typeof line === 'string') {
-                            html += `<div class="line">${line}</div>`;
-                        } else if (line.text) {
-                            html += `<div class="line">${line.text}</div>`;
-                        }
-                    });
-                    
-                    html += '</div>'; // Đóng section
-                });
-                
-                return html;
+        // Định dạng lời bài hát và nốt nhạc xen kẽ nhau
+        function formatLyricsAndNotes(lyrics, notes) {
+            console.log('Dữ liệu lyrics và notes để hiển thị:', lyrics, notes);
+            
+            // Nếu không có dữ liệu
+            if (!lyrics && !notes) {
+                return `
+                    <div class="message-box">
+                        <p>Lời bài hát và nốt nhạc của bài hát này hiện chưa có.</p>
+                    </div>
+                `;
             }
             
-            return '<p>Không có lời bài hát</p>';
+            // Tạo tiêu đề cho phần này
+            let html = `<h3></h3>`;
+            
+            // Xử lý phần lời bài hát và nốt nhạc xen kẽ nhau
+            html += '<div class="lyrics-content">';
+            
+            // Xử lý lời bài hát thành mảng
+            let lyricsLines = [];
+            if (lyrics) {
+                if (Array.isArray(lyrics)) {
+                    lyricsLines = lyrics;
+                } else if (typeof lyrics === 'string') {
+                    lyricsLines = lyrics.split('\n').filter(line => line.trim());
+                }
+            }
+            
+            // Xử lý nốt nhạc thành mảng
+            let notesLines = [];
+            if (notes) {
+                if (Array.isArray(notes)) {
+                    notesLines = notes;
+                } else if (typeof notes === 'string') {
+                    notesLines = notes.split('\n').filter(line => line.trim());
+                }
+            }
+            
+            // Xác định độ dài tối đa giữa lyrics và notes
+            const maxLength = Math.max(lyricsLines.length, notesLines.length);
+            
+            // Hiển thị lời bài hát và nốt nhạc xen kẽ nhau
+            for (let i = 0; i < maxLength; i++) {
+                // Hiển thị dòng lời bài hát nếu có
+                if (i < lyricsLines.length) {
+                    html += `<div class="lyrics-line">${lyricsLines[i] || ''}</div>`;
+                }
+                
+                // Hiển thị dòng nốt nhạc nếu có
+                if (i < notesLines.length) {
+                    html += `<div class="notes-line">${notesLines[i] || ''}</div>`;
+                }
+            }
+            
+            html += '</div>';
+            return html;
         }
         
         // Cập nhật trạng thái nút yêu thích
@@ -468,27 +531,341 @@ Chorus:
         
         // Thiết lập các tương tác
         function setupInteractions(songId) {
-            // Nút yêu thích
-            const favoriteBtn = document.querySelector('.favorite-btn');
-            if (favoriteBtn) {
-                favoriteBtn.dataset.songId = songId;
-                favoriteBtn.addEventListener('click', async () => {
-                    try {
-                        const isFavorite = await window.firestoreOperations.toggleFavoriteSong(songId);
-                        updateFavoriteButton(isFavorite);
+            // Nút yêu thích dưới tên bài hát (heart icon)
+            const heartBtn = document.getElementById('heart-favorite-btn');
+            if (heartBtn) {
+                heartBtn.dataset.songId = songId;
+                heartBtn.addEventListener('click', async () => toggleSongFavorite(songId));
+            }
+            
+            // Nút chia sẻ
+            const shareBtn = document.getElementById('share-song-btn');
+            if (shareBtn) {
+                shareBtn.addEventListener('click', () => {
+                    shareSong();
+                });
+            }
+            
+            // Nút menu (mobile)
+            const menuBtn = document.querySelector('.menu-btn');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', () => {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('overlay');
+                    if (sidebar && overlay) {
+                        sidebar.classList.add('active');
+                        overlay.classList.add('active');
                         
-                        if (isFavorite) {
-                            window.firebaseUtils.showAlert('Đã thêm vào danh sách yêu thích', 'success');
-                        } else {
-                            window.firebaseUtils.showAlert('Đã xóa khỏi danh sách yêu thích', 'info');
+                        // Cập nhật avatar trong sidebar
+                        updateSidebarAvatar();
+                    }
+                });
+            }
+            
+            // Cập nhật avatar trong form bình luận
+            updateCommentAvatar();
+            
+            // Nút gửi bình luận
+            const submitCommentBtn = document.getElementById('submit-comment');
+            const commentText = document.getElementById('comment-text');
+            
+            if (submitCommentBtn && commentText) {
+                submitCommentBtn.addEventListener('click', async () => {
+                    const content = commentText.value.trim();
+                    if (!content) {
+                        window.firebaseUtils.showAlert('Vui lòng nhập nội dung bình luận', 'warning');
+                        return;
+                    }
+                    
+                    try {
+                        // Kiểm tra đăng nhập từ localStorage trước
+                        const savedUser = localStorage.getItem('kalimbaUser');
+                        if (!savedUser && !firebase.auth().currentUser) {
+                            window.firebaseUtils.showAlert('Vui lòng đăng nhập để bình luận', 'warning');
+                            return;
+                        }
+                        
+                        const result = await window.firestoreOperations.addComment(songId, content);
+                        if (result) {
+                            // Xóa nội dung đã nhập
+                            commentText.value = '';
+                            
+                            // Tải lại bình luận
+                            loadComments(songId);
+                            
+                            window.firebaseUtils.showAlert('Bình luận của bạn đã được gửi thành công', 'success');
                         }
                     } catch (error) {
-                        console.error('Lỗi khi cập nhật trạng thái yêu thích:', error);
-                        window.firebaseUtils.showAlert('Đã xảy ra lỗi khi cập nhật trạng thái yêu thích', 'error');
+                        console.error('Lỗi khi gửi bình luận:', error);
+                        if (error === 'not-logged-in') {
+                            window.firebaseUtils.showAlert('Vui lòng đăng nhập để bình luận', 'warning');
+                        } else {
+                            window.firebaseUtils.showAlert('Đã xảy ra lỗi khi gửi bình luận', 'error');
+                        }
+                    }
+                });
+            }
+            
+            // Nút quay lại
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    window.history.back();
+                });
+            }
+            
+            // Overlay - đóng sidebar khi click vào overlay
+            const overlay = document.getElementById('overlay');
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    const sidebar = document.getElementById('sidebar');
+                    if (sidebar) {
+                        sidebar.classList.remove('active');
+                        overlay.classList.remove('active');
                     }
                 });
             }
         }
+        
+        // Cập nhật avatar trong sidebar
+        function updateSidebarAvatar() {
+            const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
+            if (!sidebarAvatar) return;
+            
+            // Kiểm tra người dùng đã đăng nhập chưa
+            const savedUser = localStorage.getItem('kalimbaUser');
+            if (savedUser) {
+                try {
+                    const userData = JSON.parse(savedUser);
+                    if (userData && userData.picture) {
+                        sidebarAvatar.innerHTML = `<img src="${userData.picture}" alt="${userData.name}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                        
+                        // Cập nhật nút đăng nhập
+                        const loginBtn = sidebarAvatar.closest('.sidebar-header').querySelector('.login-with-google-btn');
+                        if (loginBtn) {
+                            loginBtn.style.display = 'none';
+                            
+                            // Hiển thị tên người dùng nếu có thể
+                            if (userData.name) {
+                                const userProfile = sidebarAvatar.closest('.user-profile');
+                                if (userProfile) {
+                                    if (!userProfile.querySelector('.user-name')) {
+                                        const userName = document.createElement('div');
+                                        userName.className = 'user-name';
+                                        userName.textContent = userData.name;
+                                        userName.style.margin = '10px 0';
+                                        userName.style.fontWeight = 'bold'; 
+                                        userProfile.appendChild(userName);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi đọc thông tin người dùng:', error);
+                }
+            }
+        }
+        
+        // Hàm toggle yêu thích (dùng cho cả nút star và heart)
+        async function toggleSongFavorite(songId) {
+            try {
+                const isFavorite = await window.firestoreOperations.toggleFavoriteSong(songId);
+                updateAllFavoriteButtons(isFavorite);
+                
+                if (isFavorite) {
+                    window.firebaseUtils.showAlert('Đã thêm vào danh sách yêu thích', 'success');
+                } else {
+                    window.firebaseUtils.showAlert('Đã xóa khỏi danh sách yêu thích', 'info');
+                }
+            } catch (error) {
+                console.error('Lỗi khi cập nhật trạng thái yêu thích:', error);
+                window.firebaseUtils.showAlert('Đã xảy ra lỗi khi cập nhật trạng thái yêu thích', 'error');
+            }
+        }
+        
+        // Cập nhật tất cả các nút yêu thích
+        function updateAllFavoriteButtons(isFavorite) {
+            // Cập nhật nút yêu thích với icon trái tim
+            const heartBtn = document.getElementById('heart-favorite-btn');
+            if (heartBtn) {
+                const icon = heartBtn.querySelector('i');
+                if (isFavorite) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    icon.style.color = '#e74c3c'; // Màu đỏ khi đã yêu thích
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    icon.style.color = ''; // Màu mặc định
+                }
+            }
+        }
+        
+        // Hàm chia sẻ bài hát (copy link)
+        function shareSong() {
+            // Lấy URL hiện tại
+            const currentUrl = window.location.href;
+            
+            // Copy URL vào clipboard
+            navigator.clipboard.writeText(currentUrl).then(() => {
+                // Tạo thông báo
+                showCopyNotification('Đã sao chép liên kết. Bạn có thể chia sẻ với bạn bè!');
+            }).catch(err => {
+                console.error('Không thể sao chép liên kết:', err);
+                window.firebaseUtils.showAlert('Không thể sao chép liên kết', 'error');
+            });
+        }
+        
+        // Hiển thị thông báo đã sao chép
+        function showCopyNotification(message) {
+            // Kiểm tra xem đã có thông báo chưa
+            let notification = document.querySelector('.copy-notification');
+            
+            // Nếu chưa có, tạo mới
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.className = 'copy-notification';
+                document.body.appendChild(notification);
+            }
+            
+            // Cập nhật nội dung và hiển thị
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            // Tự động ẩn sau 2 giây
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+        }
+        
+        // Tải bình luận
+        async function loadComments(songId) {
+            try {
+                // Kiểm tra xem có hàm tải bình luận không
+                if (!window.firestoreOperations.getComments) {
+                    console.error('Chức năng bình luận chưa được cài đặt');
+                    return;
+                }
+                
+                const comments = await window.firestoreOperations.getComments(songId);
+                
+                const commentsContainer = document.querySelector('.comments-list');
+                if (!commentsContainer) return;
+                
+                // Cập nhật số lượng bình luận
+                const commentsTitle = document.querySelector('.comments-section h3');
+                if (commentsTitle) {
+                    commentsTitle.textContent = `Bình luận (${comments.length})`;
+                }
+                
+                // Xóa nội dung cũ
+                commentsContainer.innerHTML = '';
+                
+                if (comments.length === 0) {
+                    commentsContainer.innerHTML = `
+                        <div class="no-comments-message">
+                            <p>Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Hiển thị bình luận
+                comments.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'comment-item';
+                    if (comment.isCurrentUser) {
+                        commentElement.classList.add('current-user-comment');
+                    }
+                    
+                    const date = new Date(comment.createdAt);
+                    const formattedDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    
+                    commentElement.innerHTML = `
+                        <div class="comment-avatar">
+                            <img src="${comment.userAvatar || 'images/default-avatar.png'}" alt="${comment.userName || 'Người dùng ẩn danh'}">
+                        </div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <h4 class="comment-author">${comment.userName || 'Người dùng ẩn danh'}</h4>
+                                <span class="comment-date">${formattedDate}</span>
+                            </div>
+                            <div class="comment-text">
+                                <p>${comment.content}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    commentsContainer.appendChild(commentElement);
+                });
+                
+            } catch (error) {
+                console.error('Lỗi khi tải bình luận:', error);
+            }
+        }
+
+        // Cập nhật avatar người dùng trong form bình luận
+        function updateCommentAvatar() {
+            const userAvatarContainer = document.querySelector('.user-comment-avatar .user-avatar');
+            if (!userAvatarContainer) return;
+            
+            // Kiểm tra người dùng đã đăng nhập chưa
+            const savedUser = localStorage.getItem('kalimbaUser');
+            if (savedUser) {
+                try {
+                    const userData = JSON.parse(savedUser);
+                    if (userData && userData.picture) {
+                        userAvatarContainer.innerHTML = `<img src="${userData.picture}" alt="${userData.name}">`;
+                    } else {
+                        userAvatarContainer.innerHTML = `<i class="fas fa-user"></i>`;
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi đọc thông tin người dùng:', error);
+                    userAvatarContainer.innerHTML = `<i class="fas fa-user"></i>`;
+                }
+            } else {
+                userAvatarContainer.innerHTML = `<i class="fas fa-user"></i>`;
+            }
+        }
+
+        // Thiết lập sự kiện cho các phần tương tác
+        document.addEventListener('DOMContentLoaded', function() {
+            // Kiểm tra xem tệp tin firestore-operations.js đã được tải chưa
+            if (typeof isFirestoreInitialized === 'function') {
+                // Nếu đã tải, gọi hàm cập nhật avatar và tải bình luận
+                updateCommentAvatar();
+                updateSidebarAvatar();
+                loadComments();
+            } else {
+                // Nếu chưa tải, đợi cho đến khi tài nguyên được tải
+                console.log('Đang đợi Firestore Operations...');
+                setTimeout(function() {
+                    if (typeof isFirestoreInitialized === 'function') {
+                        updateCommentAvatar();
+                        updateSidebarAvatar();
+                        loadComments();
+                    } else {
+                        console.error('Không thể tải Firestore Operations');
+                    }
+                }, 1000);
+            }
+
+            // Thiết lập tương tác với các phần tử trên trang
+            setupInteractions();
+            
+            // Khởi tạo sự kiện đăng nhập
+            if (typeof attachLoginEvents === 'function') {
+                attachLoginEvents();
+            } else {
+                // Đợi nếu Google Auth script chưa được tải
+                setTimeout(function() {
+                    if (typeof attachLoginEvents === 'function') {
+                        attachLoginEvents();
+                    }
+                }, 1000);
+            }
+        });
     </script>
 </body>
 </html> 
