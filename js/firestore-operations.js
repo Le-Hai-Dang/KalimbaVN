@@ -52,82 +52,113 @@ async function initFirestore() {
 
 /**
  * Tải danh sách bài hát yêu thích của người dùng hiện tại
- * @returns {Promise<void>}
+ * @returns {Promise<Array>} Danh sách ID bài hát yêu thích
  */
 async function loadUserFavorites() {
   try {
+    console.log('Bắt đầu tải danh sách bài hát yêu thích...');
+    
+    // Khởi tạo Firestore nếu chưa khởi tạo
+    if (typeof initFirestore === 'function' && !db) {
+      await initFirestore();
+    }
+    
     // Kiểm tra xem người dùng đã đăng nhập qua Firebase Auth chưa
     const user = firebase.auth().currentUser;
     let userId = null;
     
     if (user) {
       userId = user.uid;
+      console.log('Đã tìm thấy người dùng từ Firebase Auth:', userId);
     } else {
       // Kiểm tra từ localStorage
       const savedUser = localStorage.getItem('kalimbaUser');
       if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        userId = userData.id;
-      } else {
-        userFavorites = [];
-        // Xóa danh sách yêu thích khỏi localStorage nếu không đăng nhập
-        localStorage.removeItem('kalimbaFavorites');
-        return;
+        try {
+          const userData = JSON.parse(savedUser);
+          userId = userData.id;
+          console.log('Đã tìm thấy người dùng từ localStorage:', userId);
+        } catch (e) {
+          console.error('Không thể parse dữ liệu người dùng từ localStorage:', e);
+        }
+      }
+      
+      // Nếu không có userId, vẫn thử tải từ localStorage
+      if (!userId) {
+        console.log('Không có thông tin người dùng, thử tải từ localStorage');
+        return loadFavoritesFromLocalStorage();
       }
     }
     
     // Nếu có ID người dùng, lấy danh sách bài hát yêu thích từ Firestore
-    if (userId) {
+    if (userId && db) {
       try {
-        // Lấy danh sách bài hát yêu thích từ Firestore
+    // Lấy danh sách bài hát yêu thích từ Firestore
+        console.log('Đang tải yêu thích từ Firestore cho người dùng', userId);
         const snapshot = await db.collection('users').doc(userId).collection('favorites').get();
-        
-        // Cập nhật danh sách yêu thích
-        userFavorites = [];
-        snapshot.forEach(doc => {
-          userFavorites.push(doc.id);
-        });
-        
+    
+    // Cập nhật danh sách yêu thích
+    userFavorites = [];
+    snapshot.forEach(doc => {
+      userFavorites.push(doc.id);
+    });
+    
         // Lưu danh sách yêu thích vào localStorage để dùng trong profile
-        saveFavoritesToLocalStorage();
+        localStorage.setItem('kalimbaFavorites', JSON.stringify(userFavorites));
         
         console.log('Đã tải danh sách yêu thích từ Firestore:', userFavorites);
+        return userFavorites;
       } catch (firestoreError) {
         console.error('Lỗi khi tải danh sách yêu thích từ Firestore:', firestoreError);
         
         // Khôi phục từ localStorage nếu có lỗi
-        try {
-          const savedFavorites = localStorage.getItem('kalimbaFavorites');
-          if (savedFavorites) {
-            userFavorites = JSON.parse(savedFavorites);
-            console.log('Đã khôi phục danh sách yêu thích từ localStorage:', userFavorites);
-          }
-        } catch (localStorageError) {
-          console.error('Không thể khôi phục danh sách yêu thích từ localStorage:', localStorageError);
-          userFavorites = [];
-        }
+        return loadFavoritesFromLocalStorage();
       }
     } else {
-      // Không có ID người dùng, xóa danh sách yêu thích
-      userFavorites = [];
-      localStorage.removeItem('kalimbaFavorites');
+      console.warn('Không có ID người dùng hoặc Firestore chưa được khởi tạo');
+      
+      // Khôi phục từ localStorage nếu có
+      return loadFavoritesFromLocalStorage();
     }
   } catch (error) {
     console.error('Lỗi khi tải danh sách yêu thích:', error);
     
     // Khôi phục từ localStorage nếu có lỗi
-    try {
-      const savedFavorites = localStorage.getItem('kalimbaFavorites');
-      if (savedFavorites) {
-        userFavorites = JSON.parse(savedFavorites);
-        console.log('Đã khôi phục danh sách yêu thích từ localStorage:', userFavorites);
-      } else {
-        userFavorites = [];
-      }
-    } catch (e) {
-      console.error('Không thể khôi phục danh sách yêu thích từ localStorage:', e);
+    return loadFavoritesFromLocalStorage();
+  }
+}
+
+/**
+ * Tải danh sách bài hát yêu thích từ localStorage
+ * @returns {Array} Danh sách ID bài hát yêu thích
+ */
+function loadFavoritesFromLocalStorage() {
+  try {
+    const savedFavorites = localStorage.getItem('kalimbaFavorites');
+    if (savedFavorites) {
+      userFavorites = JSON.parse(savedFavorites);
+      console.log('Đã khôi phục danh sách yêu thích từ localStorage:', userFavorites);
+    } else {
       userFavorites = [];
+      console.log('Không tìm thấy danh sách yêu thích trong localStorage, khởi tạo mảng rỗng');
     }
+  } catch (e) {
+    console.error('Không thể khôi phục danh sách yêu thích từ localStorage:', e);
+    userFavorites = [];
+  }
+  
+  return userFavorites;
+}
+
+/**
+ * Lưu danh sách yêu thích vào localStorage
+ */
+function saveFavoritesToLocalStorage() {
+  try {
+    localStorage.setItem('kalimbaFavorites', JSON.stringify(userFavorites));
+    console.log('Đã lưu danh sách yêu thích vào localStorage:', userFavorites);
+  } catch (error) {
+    console.error('Lỗi khi lưu danh sách yêu thích vào localStorage:', error);
   }
 }
 
@@ -255,22 +286,27 @@ async function checkFavoriteStatus(songId) {
  */
 async function toggleFavoriteSong(songId) {
   try {
+    console.log(`Đang thực hiện thay đổi trạng thái yêu thích cho bài hát: ${songId}`);
+    
     // Kiểm tra xem người dùng đã đăng nhập chưa
     const user = firebase.auth().currentUser;
     let userId = null;
     
     if (user) {
       userId = user.uid;
+      console.log('Đã tìm thấy người dùng từ Firebase Auth:', userId);
     } else {
       // Kiểm tra từ localStorage
       const savedUser = localStorage.getItem('kalimbaUser');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
         userId = userData.id;
+        console.log('Đã tìm thấy người dùng từ localStorage:', userId);
       } else {
         if (window.firebaseUtils && window.firebaseUtils.showAlert) {
           window.firebaseUtils.showAlert('Vui lòng đăng nhập để sử dụng tính năng này', 'warning');
         }
+        console.warn('Người dùng chưa đăng nhập, không thể thực hiện thao tác yêu thích');
         return null;
       }
     }
@@ -279,14 +315,11 @@ async function toggleFavoriteSong(songId) {
     await initFirestore();
     
     // Kiểm tra xem bài hát đã có trong yêu thích chưa
-    const docRef = db.collection('users').doc(userId).collection('favorites').doc(songId);
-    const doc = await docRef.get();
+    const isFavorite = userFavorites.includes(songId);
     
-    if (doc.exists) {
-      // Xóa khỏi yêu thích
-      await docRef.delete();
-      
-      // Cập nhật cache
+    if (isFavorite) {
+      console.log(`Bài hát ${songId} đã có trong yêu thích, tiến hành xóa`);
+      // Xóa khỏi danh sách yêu thích
       const index = userFavorites.indexOf(songId);
       if (index !== -1) {
         userFavorites.splice(index, 1);
@@ -295,23 +328,21 @@ async function toggleFavoriteSong(songId) {
       // Lưu thông tin vào localStorage để dùng trong profile
       saveFavoritesToLocalStorage();
       
+      // Xóa khỏi Firestore nếu người dùng đã đăng nhập
+      if (userId && db) {
+        try {
+          await db.collection('users').doc(userId).collection('favorites').doc(songId).delete();
+          console.log(`Đã xóa bài hát ${songId} khỏi yêu thích trong Firestore`);
+        } catch (error) {
+          console.error(`Lỗi khi xóa bài hát ${songId} khỏi Firestore:`, error);
+          // Vẫn trả về false vì đã xóa thành công khỏi localStorage
+        }
+      }
+      
       return false;
     } else {
-      // Lấy thông tin bài hát 
-      const songDoc = await db.collection('songs').doc(songId).get();
-      const songData = songDoc.exists ? songDoc.data() : {};
-      
-      // Thêm vào yêu thích với đầy đủ thông tin bài hát
-      await docRef.set({
-        addedAt: new Date().toISOString(),
-        songId: songId,
-        title: songData.title || 'Không có tiêu đề',
-        artist: songData.artist || 'Không có nghệ sĩ',
-        category: songData.category || 'unknown',
-        thumbnail: songData.thumbnail || ''
-      });
-      
-      // Cập nhật cache
+      console.log(`Bài hát ${songId} chưa có trong yêu thích, tiến hành thêm`);
+      // Thêm vào yêu thích
       if (!userFavorites.includes(songId)) {
         userFavorites.push(songId);
       }
@@ -319,22 +350,35 @@ async function toggleFavoriteSong(songId) {
       // Lưu thông tin vào localStorage để dùng trong profile
       saveFavoritesToLocalStorage();
       
+      // Thêm vào Firestore nếu người dùng đã đăng nhập
+      if (userId && db) {
+        try {
+          // Lấy thông tin bài hát 
+          const songDoc = await db.collection('songs').doc(songId).get();
+          const songData = songDoc.exists ? songDoc.data() : {};
+          
+          // Thêm vào yêu thích với đầy đủ thông tin bài hát
+          await db.collection('users').doc(userId).collection('favorites').doc(songId).set({
+            addedAt: new Date().toISOString(),
+            songId: songId,
+            title: songData.title || 'Không có tiêu đề',
+            artist: songData.artist || 'Không có nghệ sĩ',
+            category: songData.category || 'unknown',
+            thumbnail: songData.thumbnail || ''
+          });
+          
+          console.log(`Đã thêm bài hát ${songId} vào yêu thích trong Firestore`);
+        } catch (error) {
+          console.error(`Lỗi khi thêm bài hát ${songId} vào Firestore:`, error);
+          // Vẫn trả về true vì đã thêm thành công vào localStorage
+        }
+      }
+      
       return true;
     }
   } catch (error) {
     console.error('Lỗi khi thay đổi trạng thái yêu thích:', error);
     return null;
-  }
-}
-
-/**
- * Lưu danh sách bài hát yêu thích vào localStorage
- */
-function saveFavoritesToLocalStorage() {
-  try {
-    localStorage.setItem('kalimbaFavorites', JSON.stringify(userFavorites));
-  } catch (error) {
-    console.error('Lỗi khi lưu danh sách yêu thích vào localStorage:', error);
   }
 }
 
@@ -647,15 +691,52 @@ async function getFavoriteSongs() {
   }
 }
 
-// Export các hàm ra window object để sử dụng
+// Kiểm tra nếu đang ở môi trường Node.js
+if (typeof module !== 'undefined' && module.exports) {
+  // Export các hàm để sử dụng trong Node.js
+  module.exports = {
+    initFirestore,
+    getUserByEmail,
+    saveUserToFirestore,
+    getUserDocumentById,
+    getAllSongs,
+    getSongsByCategory,
+    getSongDetails,
+    loadUserFavorites,
+    checkFavoriteStatus,
+    toggleFavoriteSong,
+    saveFavoritesToLocalStorage,
+    saveRecentView,
+    getRecentViews,
+    searchSongs,
+    getFavoriteSongs,
+    addComment,
+    getComments
+  };
+} else {
+  // Hiển thị các hàm như global cho client-side
 window.firestoreOperations = {
   initFirestore,
+    getUserByEmail,
+    saveUserToFirestore,
+    getUserDocumentById,
+    getAllSongs,
   getSongsByCategory,
-  getSongDetails,
+    getSongDetails,
+    loadUserFavorites,
   checkFavoriteStatus,
-  toggleFavoriteSong,
-  saveRecentView,
-  getComments,
-  addComment,
-  getFavoriteSongs
-}; 
+    toggleFavoriteSong,
+    saveFavoritesToLocalStorage,
+    saveRecentView,
+    getRecentViews,
+    searchSongs,
+    getFavoriteSongs,
+    addComment,
+    getComments
+  };
+  
+  // Hàm kiểm tra xem Firestore đã được khởi tạo chưa
+  window.isFirestoreInitialized = function() {
+    return db !== null;
+  };
+} 

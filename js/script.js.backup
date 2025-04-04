@@ -19,7 +19,6 @@ let nextBtn;
 let dots;
 let googleLoginButtons;
 let categoryItems;
-let homepageTabButtons; // Thêm biến cho các tab trên trang chủ
 
 // Thể loại bài hát hiện có
 const songCategories = [
@@ -36,11 +35,49 @@ const songCategories = [
 // Toggle sidebar
 function toggleSidebar() {
     if (sidebar && overlay) {
+        console.log('DEBUG: toggleSidebar được gọi');
         sidebar.classList.toggle('active');
         overlay.classList.toggle('active');
-        console.log('Sidebar toggled');
+        console.log('Sidebar toggled, active state:', sidebar.classList.contains('active'));
     } else {
         console.error('Sidebar or overlay elements not found');
+        console.log('DEBUG: sidebar =', sidebar);
+        console.log('DEBUG: overlay =', overlay);
+    }
+}
+
+// Hàm thiết lập sự kiện menu
+function setupMobileMenu() {
+    console.log('DEBUG: Thiết lập menu mobile');
+    const menuBtn = document.getElementById('menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    
+    console.log('DEBUG: setupMobileMenu - Menu button:', !!menuBtn);
+    console.log('DEBUG: setupMobileMenu - Sidebar:', !!sidebar);
+    console.log('DEBUG: setupMobileMenu - Overlay:', !!overlay);
+    
+    if (menuBtn && sidebar && overlay) {
+        // Xóa tất cả sự kiện click cũ nếu có
+        const newMenuBtn = menuBtn.cloneNode(true);
+        menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
+        
+        // Đăng ký sự kiện mới
+        newMenuBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('DEBUG: Menu button clicked');
+            sidebar.classList.add('active');
+            overlay.classList.add('active');
+            console.log('DEBUG: Sidebar active state after click:', sidebar.classList.contains('active'));
+        });
+        
+        overlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    } else {
+        console.error('Không thể thiết lập menu mobile: không tìm thấy các phần tử cần thiết');
     }
 }
 
@@ -441,7 +478,6 @@ function closeUserMenuOnOutsideClick(event) {
 let currentSlide = 0;
 let slideCount = 0;
 let slideInterval;
-let isSliding = false;
 
 // Set up slider size
 function setupSlider() {
@@ -503,21 +539,8 @@ function nextSlide() {
     
     console.log('Going to next slide');
     
-    // Ngăn chặn lỗi nhiều slide khi nhấn nút
-    if (isSliding) {
-        console.log('Đang chuyển slide, bỏ qua lệnh này');
-        return;
-    }
-    
-    isSliding = true;
-    
     currentSlide = (currentSlide + 1) % slideCount;
     updateSliderPosition();
-    
-    // Đặt lại trạng thái sau khi chuyển slide
-    setTimeout(() => {
-        isSliding = false;
-    }, 500);
 }
 
 // Go to previous slide
@@ -534,21 +557,8 @@ function prevSlide() {
     
     console.log('Going to previous slide');
     
-    // Ngăn chặn lỗi nhiều slide khi nhấn nút
-    if (isSliding) {
-        console.log('Đang chuyển slide, bỏ qua lệnh này');
-        return;
-    }
-    
-    isSliding = true;
-    
     currentSlide = (currentSlide - 1 + slideCount) % slideCount;
     updateSliderPosition();
-    
-    // Đặt lại trạng thái sau khi chuyển slide
-    setTimeout(() => {
-        isSliding = false;
-    }, 500);
 }
 
 // Go to specific slide
@@ -574,18 +584,10 @@ function goToSlide(index) {
 
 // Initialize slider
 function initSlider() {
-    console.log('Initializing slider...');
-    
-    sliderWrapper = document.getElementById('slider-wrapper');
-    
     if (!sliderWrapper) {
-        console.log('Slider wrapper not found, cannot initialize slider');
+        console.log('Slider wrapper not found, skipping slider initialization');
         return;
     }
-    
-    // Reset slider state
-    currentSlide = 0;
-    isSliding = false;
     
     // Set up slider
     setupSlider();
@@ -710,178 +712,6 @@ function waitForFirebase(timeout = 10000) {
     });
 }
 
-// Hàm xử lý các tab trên trang chủ
-function handleHomepageTabs() {
-    console.log('Khởi tạo các tab trên trang chủ');
-    
-    // Lấy tất cả các tab button trên trang chủ
-    homepageTabButtons = document.querySelectorAll('.tab-navigation .tab-btn');
-    
-    if (!homepageTabButtons || homepageTabButtons.length === 0) {
-        console.log('Không tìm thấy các tab trên trang chủ');
-        return;
-    }
-    
-    console.log('Đã tìm thấy', homepageTabButtons.length, 'tab trên trang chủ');
-    
-    // Thêm sự kiện click cho mỗi tab
-    homepageTabButtons.forEach((btn, index) => {
-        btn.addEventListener('click', function() {
-            // Xóa trạng thái active từ tất cả các tab
-            homepageTabButtons.forEach(b => b.classList.remove('active'));
-            
-            // Đặt tab hiện tại thành active
-            this.classList.add('active');
-            
-            // Xử lý nội dung tương ứng với tab
-            if (index === 0) {
-                // Tab Phổ biến
-                console.log('Hiển thị tab Phổ biến');
-                loadPopularSongs();
-            } else if (index === 1) {
-                // Tab Xem gần đây
-                console.log('Hiển thị tab Xem gần đây');
-                loadRecentlyViewedSongs();
-            } else if (index === 2) {
-                // Tab Yêu thích
-                console.log('Hiển thị tab Yêu thích');
-                loadFavoriteSongs();
-            }
-        });
-    });
-    
-    // Mặc định hiển thị tab Phổ biến (tab đầu tiên)
-    loadPopularSongs();
-}
-
-// Hàm tải danh sách bài hát phổ biến
-function loadPopularSongs() {
-    console.log('Đang tải bài hát phổ biến...');
-    // TODO: Thêm code để tải bài hát phổ biến từ Firestore
-    // Có thể hiển thị tạm thời bằng cách giữ nguyên UI hiện tại
-}
-
-// Hàm tải danh sách bài hát đã xem gần đây
-function loadRecentlyViewedSongs() {
-    console.log('Đang tải bài hát đã xem gần đây...');
-    
-    try {
-        // Lấy danh sách bài hát đã xem gần đây từ localStorage
-        let recentlyViewed = localStorage.getItem('kalimbaRecentlyViewed');
-        
-        if (!recentlyViewed) {
-            console.log('Không có bài hát nào đã xem gần đây');
-            displayNoContentMessage('recently-viewed');
-            return;
-        }
-        
-        recentlyViewed = JSON.parse(recentlyViewed);
-        console.log('Đã tìm thấy', recentlyViewed.length, 'bài hát đã xem gần đây');
-        
-        if (!Array.isArray(recentlyViewed) || recentlyViewed.length === 0) {
-            console.log('Danh sách bài hát đã xem gần đây trống');
-            displayNoContentMessage('recently-viewed');
-            return;
-        }
-        
-        // TODO: Tải thông tin chi tiết các bài hát từ Firestore và hiển thị
-        // Hiện tại chỉ hiển thị thông báo
-        displayNoContentMessage('recently-viewed');
-    } catch (error) {
-        console.error('Lỗi khi tải bài hát đã xem gần đây:', error);
-        displayNoContentMessage('recently-viewed');
-    }
-}
-
-// Hàm tải danh sách bài hát yêu thích
-function loadFavoriteSongs() {
-    console.log('Đang tải bài hát yêu thích...');
-    
-    try {
-        // Lấy danh sách bài hát yêu thích từ localStorage
-        let favorites = localStorage.getItem('kalimbaFavorites');
-        
-        if (!favorites) {
-            console.log('Không có bài hát yêu thích nào');
-            displayNoContentMessage('favorites');
-            return;
-        }
-        
-        favorites = JSON.parse(favorites);
-        console.log('Đã tìm thấy', favorites.length, 'bài hát yêu thích');
-        
-        if (!Array.isArray(favorites) || favorites.length === 0) {
-            console.log('Danh sách bài hát yêu thích trống');
-            displayNoContentMessage('favorites');
-            return;
-        }
-        
-        // TODO: Tải thông tin chi tiết các bài hát từ Firestore và hiển thị
-        // Hiện tại chỉ hiển thị thông báo
-        displayNoContentMessage('favorites');
-    } catch (error) {
-        console.error('Lỗi khi tải bài hát yêu thích:', error);
-        displayNoContentMessage('favorites');
-    }
-}
-
-// Hiển thị thông báo không có nội dung
-function displayNoContentMessage(type) {
-    // Thêm div thông báo vào main
-    const mainElement = document.querySelector('main');
-    
-    if (!mainElement) {
-        console.error('Không tìm thấy phần tử main để hiển thị thông báo');
-        return;
-    }
-    
-    // Xóa nội dung hiện tại trong main (trừ phần categories)
-    const categories = mainElement.querySelector('.categories');
-    const sectionTitle = mainElement.querySelector('.section-title');
-    
-    // Lưu lại phần categories
-    const categoriesHTML = categories ? categories.outerHTML : '';
-    const titleHTML = sectionTitle ? sectionTitle.outerHTML : '';
-    
-    // Xóa tất cả nội dung trong main
-    mainElement.innerHTML = '';
-    
-    // Thêm lại tiêu đề và categories
-    if (titleHTML) {
-        mainElement.innerHTML += titleHTML;
-    }
-    
-    // Thêm thông báo tùy thuộc vào loại
-    let message = '';
-    let icon = '';
-    let buttonText = '';
-    
-    if (type === 'recently-viewed') {
-        message = 'Bạn chưa xem bài hát nào gần đây';
-        icon = 'fa-history';
-        buttonText = 'Khám phá bài hát';
-    } else if (type === 'favorites') {
-        message = 'Bạn chưa có bài hát yêu thích nào';
-        icon = 'fa-heart';
-        buttonText = 'Khám phá bài hát';
-    }
-    
-    const noContentHTML = `
-        <div class="no-content-message">
-            <i class="fas ${icon}"></i>
-            <p>${message}</p>
-            <a href="songs.html" class="btn"><i class="fas fa-music"></i> ${buttonText}</a>
-        </div>
-    `;
-    
-    mainElement.innerHTML += noContentHTML;
-    
-    // Thêm lại categories
-    if (categoriesHTML) {
-        mainElement.innerHTML += categoriesHTML;
-    }
-}
-
 // Initialize all DOM elements and event listeners
 function initElements() {
     console.log('Initializing elements');
@@ -914,17 +744,11 @@ function initElements() {
     console.log('Tab buttons found:', tabButtons ? tabButtons.length : 0);
     console.log('Favorite buttons found:', favoriteButtons ? favoriteButtons.length : 0);
     
-    // Lưu ý: Sự kiện cho nút menu và overlay giờ đây được xử lý trong DOMContentLoaded
-    // để tránh xung đột và ghi đè
+    // Không thiết lập lại menu button ở đây vì đã sử dụng setupMobileMenu
     
     // Make login button also toggle sidebar on mobile
     if (loginBtn && sidebar) {
-        loginBtn.addEventListener('click', function() {
-            if (sidebar && overlay) {
-                sidebar.classList.add('active');
-                overlay.classList.add('active');
-            }
-        });
+        loginBtn.addEventListener('click', toggleSidebar);
     }
     
     // Tab controls
@@ -1068,54 +892,17 @@ function initElements() {
                 console.error('Không thể khởi tạo Firebase:', error);
             });
     }
-    
-    // Initialize homepage tabs
-    handleHomepageTabs();
 }
 
 // Khởi tạo khi DOM đã tải xong
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM đã tải xong, khởi tạo...');
     
+    // Thiết lập menu mobile
+    setupMobileMenu();
+    
     // Tải dữ liệu trang
     loadPageData();
-    
-    // Xử lý menu mobile - đảm bảo chỉ đăng ký một lần
-    const menuBtn = document.getElementById('menu-btn');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-
-    if (menuBtn && sidebar && overlay) {
-        console.log('Thiết lập sự kiện cho nút menu');
-        
-        // Xóa tất cả các event listener cũ (nếu có)
-        menuBtn.replaceWith(menuBtn.cloneNode(true));
-        
-        // Lấy lại tham chiếu sau khi clone
-        const newMenuBtn = document.getElementById('menu-btn');
-        
-        // Thêm event listener mới
-        newMenuBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Nút menu được nhấp - Mở sidebar');
-            sidebar.classList.add('active');
-            overlay.classList.add('active');
-        });
-        
-        // Đăng ký sự kiện cho overlay
-        overlay.addEventListener('click', function() {
-            console.log('Overlay được nhấp - Đóng sidebar');
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-        });
-    } else {
-        console.error('Không tìm thấy một hoặc nhiều phần tử cần thiết:', {
-            menuBtn: !!menuBtn,
-            sidebar: !!sidebar,
-            overlay: !!overlay
-        });
-    }
     
     // Xử lý đăng nhập Google
     if (window.location.hash && window.location.hash.includes('access_token')) {
@@ -1342,88 +1129,4 @@ function initOtherFeatures() {
   
   // Khởi tạo các tính năng khác nếu cần
   console.log('Đã khởi tạo các tính năng khác');
-}
-
-// Thêm bài hát vào danh sách xem gần đây
-function addToRecentlyViewed(songId, songTitle, songArtist) {
-    try {
-        console.log(`Thêm bài hát ${songTitle} vào danh sách xem gần đây`);
-        
-        // Lấy danh sách bài hát xem gần đây từ localStorage
-        let recentlyViewed = [];
-        const recentlyViewedJson = localStorage.getItem('kalimbaRecentlyViewed');
-        if (recentlyViewedJson) {
-            recentlyViewed = JSON.parse(recentlyViewedJson);
-        }
-        
-        // Kiểm tra xem bài hát đã có trong danh sách chưa
-        const existingIndex = recentlyViewed.findIndex(item => item.id === songId);
-        if (existingIndex !== -1) {
-            // Nếu đã có, xóa để thêm lại vào đầu danh sách
-            recentlyViewed.splice(existingIndex, 1);
-        }
-        
-        // Thêm bài hát mới vào đầu danh sách
-        recentlyViewed.unshift({
-            id: songId,
-            title: songTitle,
-            artist: songArtist || 'Không có nghệ sĩ',
-            timestamp: new Date().getTime()
-        });
-        
-        // Giới hạn danh sách chỉ giữ 5 bài hát
-        if (recentlyViewed.length > 5) {
-            recentlyViewed = recentlyViewed.slice(0, 5);
-        }
-        
-        // Lưu lại vào localStorage
-        localStorage.setItem('kalimbaRecentlyViewed', JSON.stringify(recentlyViewed));
-        console.log(`Đã cập nhật danh sách xem gần đây, hiện có ${recentlyViewed.length} bài hát`);
-        
-        // Nếu người dùng đã đăng nhập, lưu cả vào Firebase
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            const currentUser = firebase.auth().currentUser;
-            if (currentUser) {
-                console.log(`Người dùng đã đăng nhập, lưu xem gần đây lên Firebase...`);
-                
-                try {
-                    firebase.firestore().collection('users').doc(currentUser.uid)
-                        .set({
-                            recentlyViewed: recentlyViewed,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true })
-                        .then(() => {
-                            console.log('Đã lưu danh sách xem gần đây vào Firebase');
-                        })
-                        .catch(error => {
-                            console.error('Lỗi khi lưu danh sách xem gần đây vào Firebase:', error);
-                        });
-                } catch (firebaseError) {
-                    console.error('Lỗi khi sử dụng Firebase:', firebaseError);
-                }
-            }
-        }
-        
-    } catch (error) {
-        console.error('Lỗi khi cập nhật danh sách xem gần đây:', error);
-    }
-}
-
-// Tải danh sách xem gần đây
-function loadRecentlyViewed() {
-    try {
-        // Lấy danh sách từ localStorage
-        const recentlyViewedJson = localStorage.getItem('kalimbaRecentlyViewed');
-        if (!recentlyViewedJson) {
-            console.log('Không có dữ liệu xem gần đây');
-            return [];
-        }
-        
-        const recentlyViewed = JSON.parse(recentlyViewedJson);
-        console.log(`Đã tải ${recentlyViewed.length} bài hát xem gần đây từ localStorage`);
-        return recentlyViewed;
-    } catch (error) {
-        console.error('Lỗi khi tải danh sách xem gần đây:', error);
-        return [];
-    }
 } 

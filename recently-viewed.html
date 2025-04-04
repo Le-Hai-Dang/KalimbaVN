@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài hát đã xem gần đây - Kalimba Chill</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="images/logo.jpeg" type="image/jpeg">
+    
+    <!-- Script để xóa bộ nhớ cache -->
+    <script src="js/clear-cache.js"></script>
+    <script src="js/auth-watchdog.js"></script>
+    <script src="js/auth-login-helper.js"></script>
+    <script src="js/error-handler.js"></script>
+    <script src="js/firebase-constants.js"></script>
+    <script src="js/firebase-debug.js"></script>
+    
+    <!-- Firebase App (cần thiết cho tất cả các sản phẩm của Firebase) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    
+    <!-- Thêm các SDK Firebase mà bạn muốn sử dụng -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    
+    <!-- Scripts tùy chỉnh -->
+    <script src="js/firebase-auth.js"></script>
+    <script src="js/firestore-operations.js"></script>
+    <script src="js/script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="song-list-header">
+            <div class="header-left">
+                <button class="menu-btn" id="menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <button class="back-btn" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+            <div class="header-center">
+                <h1>
+                    <img src="images/kalimba-chill-logo.jpg" alt="Kalimba Chill Logo" class="mobile-logo">
+                    <span class="logo-text">Bài hát đã xem gần đây</span>
+                </h1>
+            </div>
+            <div class="header-right">
+                <div class="header-avatar">
+                    <!-- User avatar sẽ được thêm tự động vào đây bởi javascript -->
+                </div>
+                <button class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="song-list">
+            <div class="list-header">
+                <h2>Bài hát bạn đã xem gần đây</h2>
+            </div>
+            
+            <ul class="songs" id="recently-viewed-songs">
+                <!-- Sẽ được điền bởi JavaScript -->
+                <li class="loading-item">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span>Đang tải danh sách bài hát...</span>
+                    </div>
+                </li>
+                
+                <!-- Tin nhắn khi không có bài hát (mặc định ẩn) -->
+                <li class="no-songs" style="display: none;">
+                    <div class="message">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Bạn chưa xem bài hát nào gần đây.</span>
+                    </div>
+                </li>
+            </ul>
+        </main>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fab fa-google"></i>
+                </div>
+                <div class="login-section">
+                    <button class="login-with-google-btn">
+                        <i class="fab fa-google"></i> Đăng nhập bằng Google
+                    </button>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-menu">
+            <ul>
+                <li><a href="index.html"><i class="fas fa-home"></i> Trang chủ</a></li>
+                <li><a href="songs.html"><i class="fas fa-music"></i> Bài hát</a></li>
+                <li><a href="#"><i class="fas fa-book"></i> Khóa học</a></li>
+                <li><a href="#"><i class="fas fa-list"></i> Playlist của tôi</a></li>
+                <li><a href="favorites.html"><i class="fas fa-heart"></i> Yêu thích</a></li>
+                <li><a href="#"><i class="fas fa-search"></i> Tìm theo hợp âm</a></li>
+                <li><a href="#"><i class="fas fa-guitar"></i> Tra cứu hợp âm</a></li>
+                <li><a href="index.html#donate"><i class="fas fa-hand-holding-heart"></i> Đóng góp</a></li>
+                <li><a href="feedback.html"><i class="fas fa-comment-dots"></i> Góp ý</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> Thiết lập</a></li>
+            </ul>
+        </nav>
+    </div>
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Firebase initialization -->
+    <script>
+        // Khởi tạo Firebase với cấu hình từ firebase-constants.js
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lấy cấu hình từ firebase-constants.js
+            const firebaseConfig = window.getFirebaseConfig();
+            
+            // Khởi tạo Firebase nếu chưa được khởi tạo
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log('Firebase đã được khởi tạo thành công từ firebase-constants.js');
+                
+                // Khởi tạo Analytics nếu có id
+                if (firebaseConfig.measurementId) {
+                    firebase.analytics();
+                }
+            }
+        });
+    </script>
+    
+    <!-- Script xử lý danh sách bài hát đã xem gần đây -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                console.log('Trang recently-viewed.html được tải');
+                
+                // Hiển thị loading
+                const songsList = document.getElementById('recently-viewed-songs');
+                if (!songsList) {
+                    console.error("Không tìm thấy phần tử danh sách bài hát");
+                    return;
+                }
+                
+                // Chờ Firebase được khởi tạo
+                try {
+                    await waitForFirebase();
+                } catch (error) {
+                    console.warn("Không thể kết nối đến Firebase, sẽ sử dụng dữ liệu local:", error);
+                }
+                
+                // Tải danh sách bài hát đã xem gần đây
+                const recentlyViewed = loadRecentlyViewed();
+                
+                if (!recentlyViewed || recentlyViewed.length === 0) {
+                    console.log('Không có bài hát nào đã xem gần đây');
+                    songsList.innerHTML = `
+                        <li class="no-songs">
+                            <div class="message">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Bạn chưa xem bài hát nào gần đây.</span>
+                            </div>
+                        </li>
+                    `;
+                    return;
+                }
+                
+                console.log(`Hiển thị ${recentlyViewed.length} bài hát đã xem gần đây`);
+                
+                // Xóa danh sách bài hát hiện tại
+                songsList.innerHTML = '';
+                
+                // Thêm các bài hát vào danh sách
+                recentlyViewed.forEach(song => {
+                    const li = document.createElement('li');
+                    li.className = 'song-item';
+                    li.dataset.id = song.id;
+                    
+                    // Format thời gian
+                    const date = new Date(song.timestamp);
+                    const timeAgo = getTimeAgo(date);
+                    
+                    li.innerHTML = `
+                        <div class="song-info">
+                            <div class="song-title">${song.title || 'Không có tiêu đề'}</div>
+                            <div class="song-artist">${song.artist || 'Không có nghệ sĩ'}</div>
+                            <div class="song-timestamp">${timeAgo}</div>
+                        </div>
+                        <div class="song-actions">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    `;
+                    
+                    // Thêm sự kiện click để chuyển đến trang chi tiết
+                    li.addEventListener('click', () => {
+                        window.location.href = `song-detail.html?id=${song.id}`;
+                    });
+                    
+                    // Thêm bài hát vào danh sách
+                    songsList.appendChild(li);
+                });
+                
+            } catch (error) {
+                console.error('Lỗi khi tải danh sách bài hát đã xem gần đây:', error);
+                
+                const songsList = document.getElementById('recently-viewed-songs');
+                if (songsList) {
+                    songsList.innerHTML = `
+                        <li class="error-item">
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Đã xảy ra lỗi khi tải danh sách bài hát: ${error.message}</span>
+                            </div>
+                        </li>
+                    `;
+                }
+            }
+        });
+        
+        // Hàm định dạng thời gian "time ago"
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diff = now - date;
+            
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            if (days > 0) {
+                return `${days} ngày trước`;
+            } else if (hours > 0) {
+                return `${hours} giờ trước`;
+            } else if (minutes > 0) {
+                return `${minutes} phút trước`;
+            } else {
+                return 'Vừa xong';
+            }
+        }
+    </script>
+
+    <!-- Script khắc phục vấn đề nút menu không hoạt động -->
+    <script>
+        (function() {
+            console.log("Đang thiết lập lại nút menu để đảm bảo hoạt động chính xác...");
+            
+            function fixMenuButton() {
+                try {
+                    // Lấy các phần tử cần thiết
+                    const menuBtn = document.getElementById('menu-btn');
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('overlay');
+                    
+                    if (!menuBtn || !sidebar || !overlay) {
+                        console.error("Không tìm thấy một hoặc nhiều phần tử cần thiết:", {
+                            menuBtn: !!menuBtn,
+                            sidebar: !!sidebar,
+                            overlay: !!overlay
+                        });
+                        return;
+                    }
+                    
+                    console.log("Đã tìm thấy tất cả các phần tử cần thiết, đang thiết lập lại nút menu...");
+                    
+                    // Tạo bản sao mới của nút menu để loại bỏ tất cả event listener hiện tại
+                    const newMenuBtn = menuBtn.cloneNode(true);
+                    menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
+                    
+                    // Thêm event handler mới
+                    newMenuBtn.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("Nút menu được nhấp, đang mở sidebar...");
+                        
+                        // Mở sidebar và overlay
+                        sidebar.classList.add('active');
+                        overlay.classList.add('active');
+                        
+                        // Cập nhật avatar trong sidebar
+                        if (typeof updateSidebarAvatar === 'function') {
+                            updateSidebarAvatar();
+                        }
+                        
+                        return false;
+                    };
+                    
+                    // Đảm bảo overlay đóng sidebar khi được nhấp
+                    overlay.onclick = function(e) {
+                        e.preventDefault();
+                        console.log("Overlay được nhấp, đang đóng sidebar...");
+                        sidebar.classList.remove('active');
+                        overlay.classList.remove('active');
+                        return false;
+                    };
+                    
+                    console.log("Đã thiết lập thành công nút menu và overlay");
+                } catch (error) {
+                    console.error("Lỗi khi thiết lập lại nút menu:", error);
+                }
+            }
+            
+            // Thực hiện ngay lập tức
+            fixMenuButton();
+            
+            // Thực hiện lại sau khi DOM đã tải xong
+            document.addEventListener('DOMContentLoaded', fixMenuButton);
+            
+            // Thực hiện sau một khoảng thời gian để đảm bảo
+            setTimeout(fixMenuButton, 1000);
+            setTimeout(fixMenuButton, 2000);
+        })();
+    </script>
+</body>
+</html> 

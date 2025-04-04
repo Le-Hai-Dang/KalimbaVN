@@ -1,0 +1,4 @@
+Các thay đổi đã thực hiện:
+1. Xóa trường thumbnail khi thêm bài hát mới trong hàm saveSong()
+2. Giữ lại trường thumbnail khi cập nhật bài hát đã tồn tại (nếu bài hát đó có ảnh)
+3. Bảng danh sách bài hát vẫn hiển thị hình ảnh mặc định cho các bài hát không có thumbnail

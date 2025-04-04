@@ -343,13 +343,12 @@ async function loadSongs() {
             let categoryDisplay = 'Không có';
             if (song.category) {
                 switch(song.category) {
-                    case 'nhac-vang': categoryDisplay = 'Nhạc Vàng'; break;
-                    case 'nhac-tre': categoryDisplay = 'Nhạc Trẻ'; break;
-                    case 'indie': categoryDisplay = 'Indie Việt'; break;
-                    case 'de-choi': categoryDisplay = 'Dễ chơi'; break;
-                    case 'du-ca': categoryDisplay = 'Du Ca'; break;
-                    case 'canon': categoryDisplay = 'Vòng Canon'; break;
-                    case 'c-g-am-f': categoryDisplay = 'Vòng C G Am F'; break;
+                    case 'de-choi': categoryDisplay = 'Người mới tập chơi'; break;
+                    case 'nhac-hot': categoryDisplay = 'Nhạc HOT'; break;
+                    case 'nhac-viet': categoryDisplay = 'Nhạc Việt'; break;
+                    case 'nhac-bolero': categoryDisplay = 'Nhạc Bolero'; break;
+                    case 'nhac-hoa': categoryDisplay = 'Nhạc Hoa'; break;
+                    case 'nhac-us-uk': categoryDisplay = 'Nhạc US-UK'; break;
                     default: categoryDisplay = song.category;
                 }
             }
@@ -800,13 +799,11 @@ async function saveSong() {
         console.log('Đang tải dữ liệu, bỏ qua yêu cầu lưu bài hát');
         if (window.ErrorHandler) {
             window.ErrorHandler.show({
-                message: 'Hệ thống đang bận, vui lòng thử lại sau vài giây',
-                type: 'warning'
-            }, { 
-                duration: 3000 
+                message: 'Đang xử lý dữ liệu khác, vui lòng thử lại sau',
+                code: 'operation-in-progress'
             });
         }
-        return false;
+        return;
     }
     
     try {
@@ -819,47 +816,78 @@ async function saveSong() {
             return false;
         }
         
-        // Hiển thị loading overlay
-        document.getElementById('loading-overlay').style.display = 'flex';
-        
-        // Lấy thông tin form
-        const songId = document.getElementById('song-id').value;
-        const title = document.getElementById('song-title').value;
+        // Lấy dữ liệu từ form
+        const songId = document.getElementById('song-id').value.trim();
+        const title = document.getElementById('song-title').value.trim();
         const category = document.getElementById('song-category').value;
         const featured = document.getElementById('song-featured').checked;
         const videoLink = document.getElementById('song-video').value || '';
         
-        // Các trường ẩn
+        // Xử lý các trường ẩn
         const artist = document.getElementById('song-artist').value || 'Không có';
         const thumbnail = document.getElementById('song-thumbnail').value || 'https://kalimbachill.com/images/default-song.jpg';
         
-        // Thu thập note và lyrics
-        const lyricsArray = [];
-        const notesArray = [];
+        // Chuyển đổi phân loại cũ sang mới nếu cần
+        let convertedCategory = category;
+        const oldToNewCategories = {
+            'nhac-vang': 'nhac-bolero',
+            'nhac-tre': 'nhac-viet',
+            'indie': 'nhac-viet',
+            'du-ca': 'nhac-viet',
+            'canon': 'de-choi',
+            'c-g-am-f': 'de-choi'
+        };
         
-        document.querySelectorAll('.song-line-item .song-lyric').forEach(input => {
-            const lyric = input.value.trim();
-            lyricsArray.push(lyric);
-        });
-        
-        document.querySelectorAll('.song-line-item .song-note').forEach(input => {
-            const note = input.value.trim();
-            notesArray.push(note);
-        });
-        
-        // Kiểm tra note
-        if (notesArray.length === 0 || notesArray.every(note => !note)) {
-            throw new Error('Vui lòng nhập ít nhất một dòng hợp âm');
+        if (oldToNewCategories[category]) {
+            convertedCategory = oldToNewCategories[category];
+            console.log(`Đã chuyển đổi phân loại từ ${category} sang ${convertedCategory}`);
         }
         
         // Kiểm tra title
         if (!title) {
-            throw new Error('Vui lòng nhập tên bài hát');
+            console.error('Tiêu đề bài hát không được để trống');
+            if (window.ErrorHandler) {
+                window.ErrorHandler.show({
+                    message: 'Tiêu đề bài hát không được để trống',
+                    code: 'invalid-song-title'
+                });
+            }
+            return;
         }
         
         // Kiểm tra category
-        if (!category) {
-            throw new Error('Vui lòng chọn phân loại bài hát');
+        if (!convertedCategory) {
+            console.error('Vui lòng chọn phân loại bài hát');
+            if (window.ErrorHandler) {
+                window.ErrorHandler.show({
+                    message: 'Vui lòng chọn phân loại bài hát',
+                    code: 'invalid-song-category'
+                });
+            }
+            return;
+        }
+        
+        // Xử lý notes và lyrics từ các dòng nhập
+        const noteInputs = document.querySelectorAll('.song-note');
+        const lyricInputs = document.querySelectorAll('.song-lyric');
+        
+        if (noteInputs.length === 0) {
+            throw new Error('Vui lòng nhập ít nhất một dòng hợp âm');
+        }
+        
+        // Tạo mảng notes và lyrics
+        const notesArray = [];
+        const lyricsArray = [];
+        
+        for (let i = 0; i < noteInputs.length; i++) {
+            const noteValue = noteInputs[i].value.trim();
+            const lyricValue = i < lyricInputs.length ? lyricInputs[i].value.trim() : '';
+            
+            // Chỉ thêm vào nếu có note
+            if (noteValue) {
+                notesArray.push(noteValue);
+                lyricsArray.push(lyricValue);
+            }
         }
         
         // Tạo đối tượng bài hát
@@ -867,12 +895,16 @@ async function saveSong() {
             title,
             artist,
             thumbnail,
-            category,
+            category: convertedCategory,
             featured,
             notes: notesArray,
-            lyrics: lyricsArray,
+            lyrics: lyricsArray.join('\n'),
+            updatedAt: new Date().toISOString(),
             videoLink
         };
+        
+        // Hiển thị loading overlay
+        document.getElementById('loading-overlay').style.display = 'flex';
         
         console.log('Dữ liệu bài hát cần lưu:', songData);
         
@@ -1146,13 +1178,12 @@ function initSearchAndFilter() {
                 // So sánh thể loại hiển thị với giá trị lọc
                 let matches = false;
                 switch(filterValue) {
-                    case 'nhac-vang': matches = categoryText === 'Nhạc Vàng'; break;
-                    case 'nhac-tre': matches = categoryText === 'Nhạc Trẻ'; break;
-                    case 'indie': matches = categoryText === 'Indie Việt'; break;
-                    case 'de-choi': matches = categoryText === 'Dễ chơi'; break;
-                    case 'du-ca': matches = categoryText === 'Du Ca'; break;
-                    case 'canon': matches = categoryText === 'Vòng Canon'; break;
-                    case 'c-g-am-f': matches = categoryText === 'Vòng C G Am F'; break;
+                    case 'nhac-hot': matches = categoryText === 'Nhạc HOT'; break;
+                    case 'nhac-viet': matches = categoryText === 'Nhạc Việt'; break;
+                    case 'nhac-bolero': matches = categoryText === 'Nhạc Bolero'; break;
+                    case 'nhac-hoa': matches = categoryText === 'Nhạc Hoa'; break;
+                    case 'nhac-us-uk': matches = categoryText === 'Nhạc US-UK'; break;
+                    case 'de-choi': matches = categoryText === 'Người mới tập chơi'; break;
                     default: matches = false;
                 }
                 
@@ -1590,8 +1621,8 @@ async function updateSongStats() {
         
         // Hiển thị loading trên các thẻ thống kê
         document.getElementById('total-songs-card').querySelector('.stat-value').textContent = '...';
-        document.getElementById('nhac-vang-songs-card').querySelector('.stat-value').textContent = '...';
-        document.getElementById('nhac-tre-songs-card').querySelector('.stat-value').textContent = '...';
+        document.getElementById('nhac-hot-songs-card').querySelector('.stat-value').textContent = '...';
+        document.getElementById('nhac-viet-songs-card').querySelector('.stat-value').textContent = '...';
         document.getElementById('recent-songs-card').querySelector('.stat-value').textContent = '...';
         
         // Lấy tất cả bài hát
@@ -1606,8 +1637,8 @@ async function updateSongStats() {
         const totalSongs = songs.length;
         
         // Đếm bài hát theo phân loại
-        const nhacVangSongs = songs.filter(song => song.category === 'nhac-vang').length;
-        const nhacTreSongs = songs.filter(song => song.category === 'nhac-tre').length;
+        const nhacHotSongs = songs.filter(song => song.category === 'nhac-hot').length;
+        const nhacVietSongs = songs.filter(song => song.category === 'nhac-viet').length;
         
         // Đếm bài hát thêm trong 7 ngày gần đây
         const now = new Date();
@@ -1620,21 +1651,21 @@ async function updateSongStats() {
         
         // Cập nhật giao diện
         document.getElementById('total-songs-card').querySelector('.stat-value').textContent = totalSongs;
-        document.getElementById('nhac-vang-songs-card').querySelector('.stat-value').textContent = nhacVangSongs;
-        document.getElementById('nhac-tre-songs-card').querySelector('.stat-value').textContent = nhacTreSongs;
+        document.getElementById('nhac-hot-songs-card').querySelector('.stat-value').textContent = nhacHotSongs;
+        document.getElementById('nhac-viet-songs-card').querySelector('.stat-value').textContent = nhacVietSongs;
         document.getElementById('recent-songs-card').querySelector('.stat-value').textContent = recentSongs;
         
         console.log('Đã cập nhật thống kê bài hát:', { 
             totalSongs, 
-            nhacVangSongs, 
-            nhacTreSongs, 
+            nhacHotSongs, 
+            nhacVietSongs, 
             recentSongs 
         });
     } catch (error) {
         console.error('Lỗi khi cập nhật thống kê bài hát:', error);
         document.getElementById('total-songs-card').querySelector('.stat-value').textContent = '--';
-        document.getElementById('nhac-vang-songs-card').querySelector('.stat-value').textContent = '--';
-        document.getElementById('nhac-tre-songs-card').querySelector('.stat-value').textContent = '--';
+        document.getElementById('nhac-hot-songs-card').querySelector('.stat-value').textContent = '--';
+        document.getElementById('nhac-viet-songs-card').querySelector('.stat-value').textContent = '--';
         document.getElementById('recent-songs-card').querySelector('.stat-value').textContent = '--';
     }
 } 

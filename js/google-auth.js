@@ -226,103 +226,146 @@ function syncLoginWithFirebase(userData) {
  * @param {Object} userData Dữ liệu người dùng
  */
 function updateUIAfterLogin(userData) {
-    console.log('Cập nhật giao diện cho người dùng đã đăng nhập', userData);
+    console.log('Cập nhật UI sau khi đăng nhập:', userData);
     
     // Ẩn tất cả các nút đăng nhập
-    document.querySelectorAll('.login-with-google-btn, .login-btn').forEach(btn => {
+    document.querySelectorAll('.login-btn, .login-with-google-btn').forEach(btn => {
         btn.style.display = 'none';
     });
     
     // Hiển thị avatar đã đăng nhập
     const headerAvatar = document.getElementById('header-avatar');
     if (headerAvatar) {
-        headerAvatar.style.display = 'block';
+        headerAvatar.style.display = 'flex';
         headerAvatar.classList.add('logged-in');
+        
+        // Reset nội dung
+        headerAvatar.innerHTML = '';
         
         // Thiết lập avatar nếu có
         if (userData.picture) {
-            // Kiểm tra nếu đã có thẻ img
-            let avatarImg = headerAvatar.querySelector('img');
-            
-            // Nếu chưa có thẻ img, tạo mới
-            if (!avatarImg) {
-                headerAvatar.innerHTML = ''; // Xóa nội dung cũ (nếu có)
-                avatarImg = document.createElement('img');
-                avatarImg.className = 'user-photo';
-                headerAvatar.appendChild(avatarImg);
-            }
-            
-            // Cập nhật thuộc tính của thẻ img
-            avatarImg.src = userData.picture;
-            avatarImg.alt = userData.name || 'User';
+            const avatar = document.createElement('img');
+            avatar.src = userData.picture;
+            avatar.alt = userData.name;
+            avatar.className = 'avatar-img';
+            headerAvatar.appendChild(avatar);
         } else {
-            // Nếu không có ảnh, hiển thị chữ cái đầu của tên
-            const userInitial = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
-            headerAvatar.innerHTML = `<div class="user-avatar">${userInitial}</div>`;
+            // Nếu không có ảnh, hiển thị chữ cái đầu của tên người dùng
+            const initial = document.createElement('div');
+            initial.className = 'avatar-initial';
+            initial.textContent = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+            headerAvatar.appendChild(initial);
         }
-        
-        // Thêm sự kiện click để mở user menu
+
+        // Thêm sự kiện click cho avatar sau khi đăng nhập
         headerAvatar.addEventListener('click', toggleUserMenu);
     }
     
-    // Thay đổi nội dung dropdown user menu
+    // Cập nhật avatar trong mobile header
+    const mobileAvatar = document.querySelector('.mobile-header .header-avatar');
+    if (mobileAvatar) {
+        mobileAvatar.style.display = 'flex';
+        mobileAvatar.classList.add('logged-in');
+        
+        // Reset nội dung
+        mobileAvatar.innerHTML = '';
+        
+        // Thiết lập avatar nếu có
+        if (userData.picture) {
+            const avatar = document.createElement('img');
+            avatar.src = userData.picture;
+            avatar.alt = userData.name;
+            avatar.className = 'avatar-img';
+            mobileAvatar.appendChild(avatar);
+        } else {
+            // Nếu không có ảnh, hiển thị chữ cái đầu của tên người dùng
+            const initial = document.createElement('div');
+            initial.className = 'avatar-initial';
+            initial.textContent = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+            mobileAvatar.appendChild(initial);
+        }
+
+        // Thêm sự kiện click cho mobile avatar
+        mobileAvatar.addEventListener('click', toggleUserMenu);
+    }
+    
+    // Cập nhật user menu với thông tin người dùng
     const userMenu = document.getElementById('user-menu');
     if (userMenu) {
-        // Tìm phần tử để hiển thị tên người dùng
-        const userNameElement = userMenu.querySelector('.user-name');
-        if (userNameElement) {
-            userNameElement.textContent = userData.name;
+        // Cập nhật tên người dùng và email
+        const userName = userMenu.querySelector('.user-name');
+        if (userName) {
+            userName.textContent = userData.name || 'Người dùng';
         }
         
-        // Tìm phần tử để hiển thị email
-        const userEmailElement = userMenu.querySelector('.user-email');
-        if (userEmailElement) {
-            userEmailElement.textContent = userData.email;
+        const userEmail = userMenu.querySelector('.user-email');
+        if (userEmail) {
+            userEmail.textContent = userData.email || '';
         }
         
-        // Cập nhật avatar trong user menu header
-        const userMenuAvatar = userMenu.querySelector('.user-avatar');
-        if (userMenuAvatar && userData.picture) {
-            userMenuAvatar.innerHTML = '';
-            const img = document.createElement('img');
-            img.className = 'user-photo';
-            img.src = userData.picture;
-            img.alt = userData.name || 'User';
-            userMenuAvatar.appendChild(img);
-        } else if (userMenuAvatar) {
-            // Nếu không có ảnh, hiển thị chữ cái đầu của tên
-            const userInitial = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
-            userMenuAvatar.textContent = userInitial;
+        // Cập nhật avatar
+        const menuAvatar = userMenu.querySelector('.user-menu-header .user-avatar');
+        if (menuAvatar) {
+            menuAvatar.innerHTML = '';
+            
+            if (userData.picture) {
+                const avatar = document.createElement('img');
+                avatar.src = userData.picture;
+                avatar.alt = userData.name;
+                avatar.className = 'avatar-img';
+                menuAvatar.appendChild(avatar);
+            } else {
+                const initial = document.createElement('div');
+                initial.className = 'avatar-initial';
+                initial.textContent = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+                menuAvatar.appendChild(initial);
+            }
+        }
+
+        // Đảm bảo có overlay để bắt sự kiện click ra ngoài
+        let menuOverlay = document.querySelector('.user-menu-overlay');
+        if (!menuOverlay) {
+            menuOverlay = document.createElement('div');
+            menuOverlay.className = 'user-menu-overlay';
+            document.body.appendChild(menuOverlay);
+            menuOverlay.addEventListener('click', closeUserMenuOnOutsideClick);
         }
     }
-    
-    // Hiển thị các mục menu chỉ dành cho người dùng đã đăng nhập
-    document.querySelectorAll('.user-only-menu-item').forEach(item => {
-        item.style.display = 'flex';
-    });
-    
-    // Hiển thị menu đăng xuất
-    const logoutMenuItem = document.querySelector('.logout');
-    if (logoutMenuItem) {
-        logoutMenuItem.style.display = 'flex';
-    }
-    
-    // Hiển thị tên người dùng trên thanh điều hướng (nếu có)
-    const navbarUserName = document.getElementById('navbar-user-name');
-    if (navbarUserName) {
-        navbarUserName.textContent = userData.name;
-        navbarUserName.parentElement.style.display = 'block';
-    }
-    
-    // Thêm sự kiện click outside để đóng menu
-    document.addEventListener('click', closeUserMenuOnOutsideClick);
     
     // Cập nhật avatar trong sidebar
     updateSidebarAvatar(userData);
     
-    // Kiểm tra và hiển thị mục Admin nếu là admin
-    if (window.AdminAuth && typeof window.AdminAuth.showAdminMenuItem === 'function') {
-        window.AdminAuth.showAdminMenuItem();
+    // Kiểm tra quyền admin
+    checkAdminStatus(userData.uid);
+    
+    // Tải danh sách bài hát yêu thích của người dùng
+    if (window.firestoreOperations && typeof window.firestoreOperations.loadUserFavorites === 'function') {
+        console.log('Đang tải danh sách bài hát yêu thích...');
+        window.firestoreOperations.loadUserFavorites().then(() => {
+            console.log('Đã tải xong danh sách bài hát yêu thích');
+            
+            // Cập nhật giao diện trang yêu thích nếu đang ở trang đó
+            if (window.location.pathname.includes('favorites.html') && typeof displayFavorites === 'function') {
+                displayFavorites();
+            }
+        }).catch(error => {
+            console.error('Lỗi khi tải danh sách yêu thích:', error);
+        });
+    } else {
+        console.warn('Hàm loadUserFavorites không khả dụng. Kiểm tra xem js/firestore-operations.js đã được tải chưa.');
+        // Thử tải tệp js/firestore-operations.js nếu chưa tải
+        if (!document.querySelector('script[src="js/firestore-operations.js"]')) {
+            console.log('Đang thêm script firestore-operations.js...');
+            const script = document.createElement('script');
+            script.src = 'js/firestore-operations.js';
+            script.onload = () => {
+                console.log('Đã tải firestore-operations.js, đang thử tải lại danh sách yêu thích...');
+                if (window.firestoreOperations && typeof window.firestoreOperations.loadUserFavorites === 'function') {
+                    window.firestoreOperations.loadUserFavorites();
+                }
+            };
+            document.head.appendChild(script);
+        }
     }
 }
 
@@ -333,12 +376,87 @@ function toggleUserMenu(event) {
     event.stopPropagation(); // Ngăn sự kiện lan ra document
     
     const userMenu = document.getElementById('user-menu');
+    const headerAvatar = document.getElementById('header-avatar');
     
     if (userMenu) {
-        if (userMenu.style.display === 'block') {
-            userMenu.style.display = 'none';
+        // Tạo overlay để bắt sự kiện click ra ngoài nếu chưa có
+        let menuOverlay = document.querySelector('.user-menu-overlay');
+        if (!menuOverlay) {
+            menuOverlay = document.createElement('div');
+            menuOverlay.className = 'user-menu-overlay';
+            document.body.appendChild(menuOverlay);
+            menuOverlay.addEventListener('click', closeUserMenuOnOutsideClick);
+        }
+        
+        if (userMenu.classList.contains('visible')) {
+            // Đóng menu
+            userMenu.classList.remove('visible');
+            headerAvatar.classList.remove('active');
+            menuOverlay.classList.remove('visible');
+            
+            // Sau khi hiệu ứng transition hoàn tất, ẩn menu hoàn toàn
+            setTimeout(() => {
+                if (!userMenu.classList.contains('visible')) {
+                    userMenu.style.display = 'none';
+                    menuOverlay.style.display = 'none';
+                }
+            }, 300);
         } else {
+            // Mở menu
+            // Di chuyển menu vào body để tránh bị giới hạn trong header
+            if (!userMenu.getAttribute('data-moved')) {
+                document.body.appendChild(userMenu);
+                userMenu.setAttribute('data-moved', 'true');
+            }
+            
+            // Hiển thị overlay để bắt sự kiện click ra ngoài
+            menuOverlay.style.display = 'block';
+            setTimeout(() => {
+                menuOverlay.classList.add('visible');
+            }, 10);
+            
+            // Cập nhật vị trí của menu căn chỉnh với avatar
+            const avatarRect = headerAvatar.getBoundingClientRect();
+            
+            // Đảm bảo menu luôn hiển thị (display: block) trước khi thêm class 'visible'
             userMenu.style.display = 'block';
+            
+            // Thêm class active cho avatar
+            headerAvatar.classList.add('active');
+            
+            // Căn menu với avatar (cách avatar 10px từ dưới lên)
+            userMenu.style.position = 'fixed';
+            userMenu.style.top = (avatarRect.bottom + 10) + 'px';
+            
+            // Căn giữa menu với avatar
+            const avatarCenter = avatarRect.left + (avatarRect.width / 2);
+            const menuWidth = 220; // Chiều rộng của menu
+            
+            let leftPosition = avatarCenter - (menuWidth / 2);
+            
+            // Đảm bảo menu không vượt quá viền phải màn hình
+            if (leftPosition + menuWidth > window.innerWidth) {
+                leftPosition = window.innerWidth - menuWidth - 10;
+            }
+            
+            // Đảm bảo menu không vượt quá viền trái màn hình
+            if (leftPosition < 10) {
+                leftPosition = 10;
+            }
+            
+            userMenu.style.left = leftPosition + 'px';
+            userMenu.style.right = 'auto'; // Xóa right position cũ
+            
+            userMenu.style.zIndex = '99999';
+            
+            // Điều chỉnh vị trí mũi tên chỉ lên avatar
+            const arrowPosition = Math.max(20, Math.min(200, avatarCenter - leftPosition));
+            userMenu.style.setProperty('--arrow-position', `${arrowPosition}px`);
+            
+            // Thêm class visible sau khi đã định vị đúng
+            setTimeout(() => {
+                userMenu.classList.add('visible');
+            }, 10);
         }
     }
 }
@@ -360,14 +478,26 @@ function closeUserMenuOnOutsideClick(event) {
 
 /**
  * Cập nhật avatar trong sidebar
- * @param {Object} userData Dữ liệu người dùng
+ * @param {Object} userData Dữ liệu người dùng (tùy chọn, sẽ lấy từ localStorage nếu không được truyền)
  */
 function updateSidebarAvatar(userData) {
+    // Nếu không có userData được truyền vào, lấy từ localStorage
+    if (!userData) {
+        try {
+            const savedUser = localStorage.getItem('kalimbaUser');
+            if (savedUser) {
+                userData = JSON.parse(savedUser);
+            }
+        } catch (error) {
+            console.error('Lỗi khi lấy thông tin người dùng từ localStorage:', error);
+        }
+    }
+    
     const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
     const loginSection = document.querySelector('.sidebar .login-section');
     
     if (sidebarAvatar) {
-        // Xóa icon Google
+        // Xóa nội dung cũ
         sidebarAvatar.innerHTML = '';
         
         if (userData && userData.picture) {
@@ -375,27 +505,41 @@ function updateSidebarAvatar(userData) {
             const img = document.createElement('img');
             img.src = userData.picture;
             img.alt = userData.name || 'User';
+            img.className = 'avatar-img';
             sidebarAvatar.appendChild(img);
-        } else {
+        } else if (userData && userData.name) {
             // Sử dụng chữ cái đầu tên người dùng làm avatar
-            sidebarAvatar.textContent = userData && userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+            const initial = document.createElement('div');
+            initial.className = 'avatar-initial';
+            initial.textContent = userData.name.charAt(0).toUpperCase();
+            sidebarAvatar.appendChild(initial);
+        } else {
+            // Không có thông tin người dùng, hiển thị icon mặc định
+            const icon = document.createElement('i');
+            icon.className = 'fab fa-google';
+            sidebarAvatar.appendChild(icon);
         }
     }
     
-    // Ẩn nút đăng nhập trong sidebar
-    if (loginSection) {
+    // Ẩn nút đăng nhập trong sidebar nếu đã đăng nhập
+    if (loginSection && userData) {
         loginSection.style.display = 'none';
+    } else if (loginSection) {
+        loginSection.style.display = 'block';
     }
     
-    // Thêm tên người dùng vào sidebar
-    const userProfile = document.querySelector('.sidebar .user-profile');
-    if (userProfile) {
-        // Kiểm tra nếu đã có tên người dùng thì không thêm nữa
-        if (!userProfile.querySelector('.user-name')) {
-            const userName = document.createElement('div');
-            userName.className = 'user-name';
-            userName.textContent = userData && userData.name ? userData.name : 'Người dùng';
-            userProfile.appendChild(userName);
+    // Thêm tên người dùng vào sidebar nếu có
+    if (userData) {
+        const userProfile = document.querySelector('.sidebar .user-profile');
+        if (userProfile) {
+            // Kiểm tra nếu đã có tên người dùng thì không thêm nữa
+            let userName = userProfile.querySelector('.user-name');
+            if (!userName) {
+                userName = document.createElement('div');
+                userName.className = 'user-name';
+                userProfile.appendChild(userName);
+            }
+            userName.textContent = userData.name || 'Người dùng';
         }
     }
 }

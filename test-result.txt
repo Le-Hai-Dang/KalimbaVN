@@ -1,0 +1,275 @@
+Bắt đầu kiểm tra luồng CRUD bài hát và chức năng yêu thích
+1. Kiểm tra file /js/firestore-operations.js và chức năng toggleFavoriteSong
+}
+
+/**
+ * Lưu danh sách yêu thích vào localStorage
+ */
+function saveFavoritesToLocalStorage() {
+  try {
+    localStorage.setItem('kalimbaFavorites', JSON.stringify(userFavorites));
+    console.log('Đã lưu danh sách yêu thích vào localStorage:', userFavorites);
+  } catch (error) {
+    console.error('Lỗi khi lưu danh sách yêu thích vào localStorage:', error);
+--
+/**
+ * Thêm hoặc xóa bài hát khỏi danh sách yêu thích
+ * @param {string} songId ID của bài hát cần thêm/xóa
+ * @returns {Promise<boolean>} True nếu đã thêm, False nếu đã xóa, null nếu có lỗi
+ */
+async function toggleFavoriteSong(songId) {
+  try {
+    console.log(`Đang thực hiện thay đổi trạng thái yêu thích cho bài hát: ${songId}`);
+    
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    const user = firebase.auth().currentUser;
+--
+      if (index !== -1) {
+        userFavorites.splice(index, 1);
+      }
+      
+      // Lưu thông tin vào localStorage để dùng trong profile
+      saveFavoritesToLocalStorage();
+      
+      // Xóa khỏi Firestore nếu người dùng đã đăng nhập
+      if (userId && db) {
+        try {
+          await db.collection('users').doc(userId).collection('favorites').doc(songId).delete();
+--
+      if (!userFavorites.includes(songId)) {
+        userFavorites.push(songId);
+      }
+      
+      // Lưu thông tin vào localStorage để dùng trong profile
+      saveFavoritesToLocalStorage();
+      
+      // Thêm vào Firestore nếu người dùng đã đăng nhập
+      if (userId && db) {
+        try {
+          // Lấy thông tin bài hát 
+--
+
+/**
+ * Lấy danh sách bài hát yêu thích của người dùng hiện tại
+ * @returns {Promise<Array>} Danh sách bài hát yêu thích
+ */
+async function getFavoriteSongs() {
+  try {
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    const user = firebase.auth().currentUser;
+    let userId = null;
+    
+--
+    getAllSongs,
+    getSongsByCategory,
+    getSongDetails,
+    loadUserFavorites,
+    checkFavoriteStatus,
+    toggleFavoriteSong,
+    saveFavoritesToLocalStorage,
+    saveRecentView,
+    getRecentViews,
+    searchSongs,
+    getFavoriteSongs,
+    addComment,
+    getComments
+  };
+} else {
+  // Hiển thị các hàm như global cho client-side
+--
+    getAllSongs,
+  getSongsByCategory,
+    getSongDetails,
+    loadUserFavorites,
+  checkFavoriteStatus,
+    toggleFavoriteSong,
+    saveFavoritesToLocalStorage,
+    saveRecentView,
+    getRecentViews,
+    searchSongs,
+    getFavoriteSongs,
+    addComment,
+    getComments
+  };
+  
+  // Hàm kiểm tra xem Firestore đã được khởi tạo chưa
+2. Kiểm tra liên kết sang favorites.html trong các trang chính
+./recently-viewed.html:                <li><a href="favorites.html"><i class="fas fa-heart"></i> Yêu thích</a></li>
+./index.html:                            <a href="favorites.html" class="user-menu-item user-only-menu-item">
+./index.html:                    <li><a href="favorites.html"><i class="fas fa-heart"></i> Yêu thích</a></li>
+./index.html:            <a href="favorites.html" class="user-menu-item menu-close">
+./favorites.html:                <li><a href="favorites.html" class="active"><i class="fas fa-heart"></i> Yêu thích</a></li>
+./favorites.html:            <a href="favorites.html" class="user-menu-item">
+./songs.html:            <a href="favorites.html" class="user-menu-item">
+./song-detail.html:                <li><a href="favorites.html"><i class="fas fa-heart"></i> Yêu thích</a></li>
+./song-detail.html:            <a href="favorites.html" class="user-menu-item">
+3. Kiểm tra chức năng CRUD bài hát trong admin.js
+}
+
+/**
+ * Lưu bài hát (thêm hoặc cập nhật)
+ */
+async function saveSong() {
+    // Nếu đang tải dữ liệu thì không thực hiện
+    if (isLoading) {
+        console.log('Đang tải dữ liệu, bỏ qua yêu cầu lưu bài hát');
+        if (window.ErrorHandler) {
+            window.ErrorHandler.show({
+--
+
+/**
+ * Mở modal để chỉnh sửa bài hát
+ * @param {String} songId ID của bài hát cần chỉnh sửa
+ */
+async function openEditSongModal(songId) {
+    try {
+        // Hiển thị loading overlay
+        document.getElementById('loading-overlay').style.display = 'flex';
+        
+        // Lấy thông tin bài hát
+--
+
+/**
+ * Xóa bài hát
+ * @param {String} songId ID của bài hát cần xóa
+ */
+async function deleteSong(songId) {
+    try {
+        // Hiển thị loading overlay
+        document.getElementById('loading-overlay').style.display = 'flex';
+        
+        // Kiểm tra xem songId có tồn tại không
+4. Kiểm tra trang favorites.html và cách hiển thị bài hát yêu thích
+                                            <button class="remove-favorite" data-song-id="${song.id}" onclick="removeFromFavorites('${song.id}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <a href="song-detail.html?id=${song.id}" class="favorite-link"></a>
+                                </div>
+                            `;
+                        });
+                        
+                        if (favoritesGrid) {
+--
+        function removeFromFavorites(songId) {
+            try {
+                // Lấy danh sách yêu thích hiện tại
+                let favorites = JSON.parse(localStorage.getItem('kalimbaFavorites') || '[]');
+                
+                // Xóa bài hát khỏi danh sách
+                favorites = favorites.filter(id => id !== songId);
+                
+                // Lưu lại vào localStorage
+                localStorage.setItem('kalimbaFavorites', JSON.stringify(favorites));
+                
+5. Kiểm tra cách xử lý bài hát yêu thích trong trang song-detail.html
+                // Nếu có hàm toggleFavoriteSong trong firestore-operations.js, sử dụng nó
+                if (window.firestoreOperations && typeof window.firestoreOperations.toggleFavoriteSong === 'function') {
+                    const isFavorite = await window.firestoreOperations.toggleFavoriteSong(songId);
+                    
+                    // Nếu hàm trả về null, có thể người dùng chưa đăng nhập
+                    if (isFavorite === null) {
+                        return;
+                    }
+                    
+                    // Cập nhật trạng thái nút
+                    updateAllFavoriteButtons(isFavorite);
+                    
+                    // Hiển thị thông báo
+--
+                    console.error('Hàm toggleFavoriteSong không tồn tại, xử lý thủ công');
+                    // Lấy danh sách yêu thích hiện tại
+                    let favorites = [];
+                    try {
+                        const favoritesJson = localStorage.getItem('kalimbaFavorites');
+                        if (favoritesJson) {
+                            favorites = JSON.parse(favoritesJson);
+                        }
+                    } catch (e) {
+                        favorites = [];
+                    }
+6. Kiểm tra luồng CRUD bài hát trong admin.js
+343:            let categoryDisplay = 'Không có';
+344:            if (song.category) {
+345:                switch(song.category) {
+346:                    case 'nhac-vang': categoryDisplay = 'Nhạc Vàng'; break;
+347:                    case 'nhac-tre': categoryDisplay = 'Nhạc Trẻ'; break;
+348:                    case 'indie': categoryDisplay = 'Indie Việt'; break;
+349:                    case 'de-choi': categoryDisplay = 'Dễ chơi'; break;
+350:                    case 'du-ca': categoryDisplay = 'Du Ca'; break;
+351:                    case 'canon': categoryDisplay = 'Vòng Canon'; break;
+352:                    case 'c-g-am-f': categoryDisplay = 'Vòng C G Am F'; break;
+353:                    default: categoryDisplay = song.category;
+363:                    <td>${categoryDisplay}</td>
+611:    document.getElementById('song-category').value = '';
+702:    document.getElementById('song-category').value = song.category || '';
+797:async function saveSong() {
+828:        const category = document.getElementById('song-category').value;
+860:        // Kiểm tra category
+861:        if (!category) {
+870:            category,
+942:async function openEditSongModal(songId) {
+1056:async function deleteSong(songId) {
+1143:                const categoryCell = row.querySelector('td:nth-child(3)');
+1144:                const categoryText = categoryCell ? categoryCell.textContent.trim() : '';
+1149:                    case 'nhac-vang': matches = categoryText === 'Nhạc Vàng'; break;
+1150:                    case 'nhac-tre': matches = categoryText === 'Nhạc Trẻ'; break;
+1151:                    case 'indie': matches = categoryText === 'Indie Việt'; break;
+1152:                    case 'de-choi': matches = categoryText === 'Dễ chơi'; break;
+1153:                    case 'du-ca': matches = categoryText === 'Du Ca'; break;
+1154:                    case 'canon': matches = categoryText === 'Vòng Canon'; break;
+1155:                    case 'c-g-am-f': matches = categoryText === 'Vòng C G Am F'; break;
+7. Xác minh các thời điểm kết nối đến Firestore
+27:async function initFirestore() {
+62:    if (typeof initFirestore === 'function' && !db) {
+63:      await initFirestore();
+174:    await initFirestore();
+271:    await initFirestore();
+315:    await initFirestore();
+398:    await initFirestore();
+479:    await initFirestore();
+502:    await initFirestore();
+619:    await initFirestore();
+662:    await initFirestore();
+698:    initFirestore,
+719:  initFirestore,
+44-    
+45-    // Tải danh sách bài hát yêu thích của người dùng hiện tại
+46:    await loadUserFavorites();
+47-  } catch (error) {
+48-    console.error('Lỗi khi khởi tạo Firestore:', error);
+--
+55- * @returns {Promise<Array>} Danh sách ID bài hát yêu thích
+56- */
+57:async function loadUserFavorites() {
+58-  try {
+59-    console.log('Bắt đầu tải danh sách bài hát yêu thích...');
+--
+101-    userFavorites = [];
+102-    snapshot.forEach(doc => {
+103:      userFavorites.push(doc.id);
+104-    });
+105-    
+--
+345-      // Thêm vào yêu thích
+346-      if (!userFavorites.includes(songId)) {
+347:        userFavorites.push(songId);
+348-      }
+349-      
+--
+703-    getSongsByCategory,
+704-    getSongDetails,
+705:    loadUserFavorites,
+706-    checkFavoriteStatus,
+707-    toggleFavoriteSong,
+--
+724-  getSongsByCategory,
+725-    getSongDetails,
+726:    loadUserFavorites,
+727-  checkFavoriteStatus,
+728-    toggleFavoriteSong,
+8. Kiểm tra chức năng chuyển đổi từ phân loại cũ sang mới
+9. Tạo script chuyển đổi phân loại (converter.js)
+Đã hoàn tất script chuyển đổi phân loại
+10. Kiểm tra xử lý bài hát có phân loại cũ trong admin.js

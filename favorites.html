@@ -231,6 +231,32 @@
     </div>
     <div class="overlay" id="overlay"></div>
 
+    <!-- Thêm user-menu và overlay cho menu này -->
+    <div class="user-menu-overlay" style="display: none;"></div>
+    <div id="user-menu" class="user-menu">
+        <div class="user-menu-header">
+            <div class="user-avatar"></div>
+            <div class="user-info">
+                <div class="user-name">Chưa đăng nhập</div>
+                <div class="user-email"></div>
+            </div>
+        </div>
+        <div class="user-menu-items">
+            <a href="favorites.html" class="user-menu-item">
+                <i class="fas fa-heart"></i> Bài hát yêu thích
+            </a>
+            <a href="#" class="user-menu-item">
+                <i class="fas fa-list"></i> Playlist của tôi
+            </a>
+            <a href="#" class="user-menu-item">
+                <i class="fas fa-history"></i> Đã xem gần đây
+            </a>
+            <a href="#" class="user-menu-item logout">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </a>
+        </div>
+    </div>
+
     <!-- Script xử lý trang yêu thích -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -325,13 +351,33 @@
         
         // Kiểm tra đăng nhập và tải danh sách yêu thích
         function checkLoginAndLoadFavorites() {
+            console.log('Kiểm tra đăng nhập và tải danh sách yêu thích');
+            
+            // Kiểm tra dữ liệu trong localStorage
+            let favoritesList = null;
+            try {
+                favoritesList = localStorage.getItem('kalimbaFavorites');
+                if (favoritesList) {
+                    favoritesList = JSON.parse(favoritesList);
+                    console.log('Đã tìm thấy danh sách bài hát yêu thích trong localStorage:', favoritesList);
+                }
+            } catch (e) {
+                console.error('Lỗi khi đọc danh sách yêu thích từ localStorage:', e);
+            }
+            
             // Kiểm tra xem người dùng đã đăng nhập chưa
-            const userData = localStorage.getItem('userData');
+            const userData = localStorage.getItem('kalimbaUser');
             
             if (userData) {
+                console.log('Người dùng đã đăng nhập, tải danh sách yêu thích');
                 // Người dùng đã đăng nhập, tải danh sách yêu thích
                 displayFavorites();
+            } else if (favoritesList && favoritesList.length > 0) {
+                console.log('Người dùng chưa đăng nhập nhưng có danh sách yêu thích trong localStorage');
+                // Nếu có danh sách yêu thích trong localStorage, vẫn hiển thị
+                displayFavorites();
             } else {
+                console.log('Người dùng chưa đăng nhập và không có danh sách yêu thích, hiển thị thông báo');
                 // Chuyển hướng về trang chủ hoặc hiển thị thông báo cần đăng nhập
                 const favoritesGrid = document.getElementById('favorites-grid');
                 const noFavorites = document.getElementById('no-favorites');
@@ -356,43 +402,43 @@
         
         // Hiển thị danh sách yêu thích
         function displayFavorites() {
+            console.log('Bắt đầu hiển thị danh sách yêu thích');
+            
             // Kiểm tra xem Firestore đã được khởi tạo chưa
             try {
-                if (typeof isFirestoreInitialized === 'function') {
-                    if (!isFirestoreInitialized()) {
-                        initFirestore();
-                    }
-                    
-                    const favoritesGrid = document.getElementById('favorites-grid');
-                    const noFavorites = document.getElementById('no-favorites');
-                    
-                    // Hiển thị loading
+                const favoritesGrid = document.getElementById('favorites-grid');
+                const noFavorites = document.getElementById('no-favorites');
+                
+                // Hiển thị loading
+                if (favoritesGrid) {
+                    favoritesGrid.innerHTML = `
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Đang tải bài hát yêu thích...</span>
+                        </div>
+                    `;
+                }
+                
+                // Lấy danh sách yêu thích từ localStorage
+                const favorites = JSON.parse(localStorage.getItem('kalimbaFavorites') || '[]');
+                console.log('Đã tải danh sách ID yêu thích từ localStorage:', favorites);
+                
+                if (favorites.length === 0) {
+                    // Không có bài hát yêu thích
+                    console.log('Không có bài hát yêu thích, hiển thị thông báo');
                     if (favoritesGrid) {
-                        favoritesGrid.innerHTML = `
-                            <div class="loading-spinner">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                <span>Đang tải bài hát yêu thích...</span>
-                            </div>
-                        `;
+                        favoritesGrid.innerHTML = '';
                     }
-                    
-                    // Lấy danh sách yêu thích từ localStorage
-                    const favorites = JSON.parse(localStorage.getItem('userFavorites') || '[]');
-                    
-                    if (favorites.length === 0) {
-                        // Không có bài hát yêu thích
-                        if (favoritesGrid) {
-                            favoritesGrid.innerHTML = '';
-                        }
-                        if (noFavorites) {
-                            noFavorites.style.display = 'flex';
-                        }
-                        return;
+                    if (noFavorites) {
+                        noFavorites.style.display = 'flex';
                     }
-                    
+                    return;
+                }
+                
+                if (typeof firebase !== 'undefined' && firebase.firestore) {
+                    console.log('Firebase Firestore khả dụng, tải thông tin bài hát');
                     // Tìm nạp thông tin bài hát từ Firestore
                     const songsCollection = firebase.firestore().collection('songs');
-                    let loadedCount = 0;
                     
                     // Xóa loading
                     if (favoritesGrid) {
@@ -408,25 +454,25 @@
                                     id: doc.id,
                                     title: songData.title || 'Không tiêu đề',
                                     artist: songData.artist || 'Không nghệ sĩ',
-                                    key: songData.key || 'C',
+                                    thumbnail: songData.thumbnail || 'images/default-song.jpg'
                                 };
                             } else {
-                                console.warn(`Bài hát ${songId} không tồn tại trong Firestore.`);
+                                console.warn(`Không tìm thấy thông tin bài hát với ID: ${songId}`);
                                 return null;
                             }
                         }).catch(error => {
-                            console.error(`Lỗi khi tải bài hát ${songId}:`, error);
+                            console.error(`Lỗi khi tải thông tin bài hát với ID ${songId}:`, error);
                             return null;
                         });
                     });
                     
-                    // Đợi tất cả promise hoàn thành
+                    // Xử lý kết quả từ tất cả các promise
                     Promise.all(songPromises).then(songs => {
-                        // Lọc ra các bài hát tồn tại
+                        // Lọc bỏ các giá trị null
                         const validSongs = songs.filter(song => song !== null);
                         
                         if (validSongs.length === 0) {
-                            // Không có bài hát hợp lệ
+                            // Không tìm thấy bài hát nào
                             if (noFavorites) {
                                 noFavorites.style.display = 'flex';
                             }
@@ -434,36 +480,32 @@
                         }
                         
                         // Hiển thị bài hát
+                        let html = '';
                         validSongs.forEach(song => {
-                            const songCard = document.createElement('div');
-                            songCard.className = 'favorite-card';
-                            
-                            songCard.innerHTML = `
-                                <a href="song-detail.html?id=${song.id}">
+                            html += `
+                                <div class="favorite-card" data-id="${song.id}">
                                     <div class="favorite-card-content">
-                                        <div class="song-title">${song.title}</div>
-                                        <div class="song-artist">${song.artist}</div>
-                                        <div class="song-key">${song.key}</div>
+                                        <div class="favorite-thumb">
+                                            <img src="${song.thumbnail}" alt="${song.title}" onerror="this.src='images/default-song.jpg'">
+                                        </div>
+                                        <div class="favorite-info">
+                                            <h3>${song.title}</h3>
+                                            <p>${song.artist}</p>
+                                        </div>
+                                        <div class="favorite-actions">
+                                            <button class="remove-favorite" data-song-id="${song.id}" onclick="removeFromFavorites('${song.id}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                </a>
-                                <button class="remove-favorite" data-song-id="${song.id}" title="Xóa khỏi yêu thích">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                                    <a href="song-detail.html?id=${song.id}" class="favorite-link"></a>
+                                </div>
                             `;
-                            
-                            if (favoritesGrid) {
-                                favoritesGrid.appendChild(songCard);
-                            }
                         });
                         
-                        // Gắn sự kiện cho nút xóa yêu thích
-                        document.querySelectorAll('.remove-favorite').forEach(button => {
-                            button.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                const songId = this.getAttribute('data-song-id');
-                                removeFromFavorites(songId);
-                            });
-                        });
+                        if (favoritesGrid) {
+                            favoritesGrid.innerHTML = html;
+                        }
                     }).catch(error => {
                         console.error('Lỗi khi tải bài hát yêu thích:', error);
                         
@@ -477,7 +519,15 @@
                         }
                     });
                 } else {
-                    console.error("Firestore không được khởi tạo");
+                    console.error("Firestore không được khởi tạo, không thể tải thông tin bài hát");
+                    if (favoritesGrid) {
+                        favoritesGrid.innerHTML = `
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Không thể kết nối đến cơ sở dữ liệu. Vui lòng thử lại sau.</span>
+                            </div>
+                        `;
+                    }
                 }
             } catch (error) {
                 console.error("Lỗi khi hiển thị bài hát yêu thích:", error);
@@ -488,17 +538,17 @@
         function removeFromFavorites(songId) {
             try {
                 // Lấy danh sách yêu thích hiện tại
-                let favorites = JSON.parse(localStorage.getItem('userFavorites') || '[]');
+                let favorites = JSON.parse(localStorage.getItem('kalimbaFavorites') || '[]');
                 
                 // Xóa bài hát khỏi danh sách
                 favorites = favorites.filter(id => id !== songId);
                 
                 // Lưu lại vào localStorage
-                localStorage.setItem('userFavorites', JSON.stringify(favorites));
+                localStorage.setItem('kalimbaFavorites', JSON.stringify(favorites));
                 
                 // Cập nhật lên Firestore nếu người dùng đã đăng nhập
-                if (typeof updateUserFavorites === 'function') {
-                    updateUserFavorites(favorites, false); // false = không hiển thị thông báo
+                if (window.firestoreOperations && typeof window.firestoreOperations.loadUserFavorites === 'function') {
+                    window.firestoreOperations.loadUserFavorites();
                 }
                 
                 // Xóa thẻ từ giao diện
