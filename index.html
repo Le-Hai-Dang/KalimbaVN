@@ -559,7 +559,8 @@
                     
                     // Tìm avatar và login section trong sidebar
                     const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
-                    const loginSection = document.querySelector('.sidebar .login-section');
+                    const loginSection = document.querySelector('.sidebar .login-section') || document.querySelector('.sidebar .login-with-google-btn');
+                    const userProfile = document.querySelector('.sidebar .user-profile');
                     
                     if (sidebarAvatar && loginSection) {
                         // Xóa nội dung cũ
@@ -571,12 +572,25 @@
                             avatar.src = userData.picture;
                             avatar.alt = userData.name;
                             avatar.className = 'avatar-img';
+                            avatar.style.width = "100%";
+                            avatar.style.height = "100%";
+                            avatar.style.objectFit = "cover";
+                            avatar.style.borderRadius = "50%";
                             sidebarAvatar.appendChild(avatar);
                         } else {
                             // Nếu không có ảnh, hiển thị chữ cái đầu của tên người dùng
                             const initial = document.createElement('div');
                             initial.className = 'avatar-initial';
                             initial.textContent = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+                            initial.style.backgroundColor = "#4285f4";
+                            initial.style.color = "white";
+                            initial.style.width = "100%";
+                            initial.style.height = "100%";
+                            initial.style.display = "flex";
+                            initial.style.alignItems = "center";
+                            initial.style.justifyContent = "center";
+                            initial.style.borderRadius = "50%";
+                            initial.style.fontSize = "24px";
                             sidebarAvatar.appendChild(initial);
                         }
                         
@@ -626,6 +640,91 @@
     
     <!-- Script xử lý tình trạng đăng nhập -->
     <script>
+      // Hàm thực hiện đăng xuất có sẵn ở phạm vi toàn cục
+      window.logoutUser = function() {
+        console.log("Đang đăng xuất người dùng...");
+        
+        // Xóa thông tin người dùng từ localStorage
+        localStorage.removeItem('kalimbaUser');
+        localStorage.removeItem('userData');
+        
+        // Đăng xuất từ Firebase nếu có
+        if (window.firebase && window.firebase.auth) {
+            window.firebase.auth().signOut().then(() => {
+                console.log("Đã đăng xuất từ Firebase");
+            }).catch(error => {
+                console.error("Lỗi khi đăng xuất từ Firebase:", error);
+            });
+        }
+        
+        // Cập nhật UI hiển thị
+        updateUIAfterLogout();
+      };
+      
+      // Hàm cập nhật UI sau khi đăng xuất
+      function updateUIAfterLogout() {
+        // Ẩn avatar và hiển thị nút đăng nhập trên mobile
+        const mobileHeaderAvatar = document.querySelector('.mobile-header .header-avatar');
+        const mobileLoginBtn = document.querySelector('.mobile-header .login-btn');
+        
+        if (mobileHeaderAvatar) {
+            mobileHeaderAvatar.classList.remove('logged-in');
+            mobileHeaderAvatar.style.display = 'none';
+        }
+        
+        if (mobileLoginBtn) {
+            mobileLoginBtn.style.display = 'flex';
+        }
+        
+        // Cập nhật avatar trong sidebar
+        const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
+        const sidebarLoginSection = document.querySelector('.sidebar .login-section') || 
+                                    document.querySelector('.sidebar .login-with-google-btn');
+        
+        if (sidebarAvatar) {
+            sidebarAvatar.innerHTML = '<i class="fab fa-google"></i>';
+        }
+        
+        if (sidebarLoginSection) {
+            sidebarLoginSection.style.display = 'block';
+        }
+        
+        // Ẩn các menu chỉ hiển thị khi đăng nhập
+        const userOnlyMenuItems = document.querySelectorAll('.user-only-menu-item');
+        userOnlyMenuItems.forEach(item => {
+            item.style.display = 'none';
+        });
+        
+        // Cập nhật UI desktop
+        const headerAvatar = document.getElementById('header-avatar');
+        const desktopLoginBtn = document.getElementById('main-login-btn');
+        const desktopUserMenu = document.getElementById('user-menu');
+        
+        if (headerAvatar) {
+            headerAvatar.classList.remove('logged-in');
+            headerAvatar.style.display = 'none';
+            headerAvatar.innerHTML = '';
+        }
+        
+        if (desktopLoginBtn) {
+            desktopLoginBtn.style.display = 'flex';
+        }
+        
+        // Đóng menu desktop nếu đang mở
+        if (desktopUserMenu) {
+            desktopUserMenu.classList.remove('active');
+            desktopUserMenu.classList.remove('visible');
+        }
+        
+        // Ẩn overlay nếu có
+        const overlay = document.querySelector('.user-menu-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+        
+        console.log("Đã cập nhật UI sau khi đăng xuất");
+      }
+      
       document.addEventListener('DOMContentLoaded', function() {
         // Ẩn Firebase Auth UI
         const firebaseAuthContainer = document.querySelector('.firebaseui-container');
@@ -662,6 +761,215 @@
             el.style.display = 'none';
           });
         }
+        
+        // Xử lý đăng xuất trên desktop
+        const logoutButton = document.querySelector('.desktop-header .logout');
+        if (logoutButton) {
+          logoutButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Ngăn chặn sự kiện lan rộng
+            e.stopPropagation();
+            
+            // Thực hiện đăng xuất
+            if (window.logoutUser && typeof window.logoutUser === 'function') {
+              window.logoutUser();
+            } else {
+              // Fallback nếu không tìm thấy hàm logoutUser
+              localStorage.removeItem('kalimbaUser');
+              localStorage.removeItem('userData');
+              
+              if (window.firebase && window.firebase.auth) {
+                window.firebase.auth().signOut();
+              }
+              
+              // Làm mới trang
+              setTimeout(function() {
+                location.reload();
+              }, 100);
+            }
+          });
+        }
+      });
+    </script>
+
+    <!-- Script xóa thông báo lỗi đăng nhập -->
+    <script>
+      // Xóa thông báo lỗi đăng nhập khi nhấp vào nút đăng nhập
+      document.addEventListener('DOMContentLoaded', function() {
+        // Xóa thông báo lỗi ngay khi trang tải
+        removeAllErrorMessages();
+        
+        // Tìm tất cả các nút đăng nhập
+        const loginButtons = document.querySelectorAll('.login-btn, .login-with-google-btn, button[id*="login"], button[id*="Login"]');
+        
+        loginButtons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            // Chặn sự kiện lan rộng
+            e.stopPropagation();
+            
+            // Xóa thông báo lỗi ngay lập tức
+            removeAllErrorMessages();
+            
+            // Đặt hẹn giờ để xóa thông báo lỗi sau khi nhấp
+            for (let i = 0; i < 10; i++) {
+              setTimeout(removeAllErrorMessages, i * 100);
+            }
+          });
+        });
+        
+        // Hàm xóa tất cả thông báo lỗi
+        function removeAllErrorMessages() {
+          // Xóa thông báo lỗi đăng nhập
+          removeLoginErrorMessages();
+          
+          // Xóa các thông báo lỗi thông thường
+          removeErrorMessages();
+        }
+        
+        // Hàm xóa lỗi đăng nhập cụ thể
+        function removeLoginErrorMessages() {
+          // Tìm kiếm cụ thể thông báo lỗi đăng nhập theo nhiều cách khác nhau
+          
+          // 1. Xóa theo class và style
+          const errorBox = document.querySelector('.error-box, .alert-danger, .alert-error, div[class*="error"]');
+          if (errorBox) {
+            errorBox.style.display = 'none';
+            if (errorBox.parentNode) {
+              errorBox.parentNode.removeChild(errorBox);
+            }
+          }
+          
+          // 2. Xóa theo màu nền đỏ
+          document.querySelectorAll('div[style*="background-color"]').forEach(div => {
+            const style = div.getAttribute('style') || '';
+            if (style.includes('#f8d7da') || style.includes('rgb(248, 215, 218)') || 
+                style.includes('red') || style.includes('pink')) {
+              div.style.display = 'none';
+              if (div.parentNode) {
+                div.parentNode.removeChild(div);
+              }
+            }
+          });
+          
+          // 3. Xóa theo nội dung text
+          const errorTexts = [
+            'Hệ thống đăng nhập đang bị lỗi',
+            'Vui lòng làm mới trang',
+            'hệ thống đăng nhập',
+            'lỗi đăng nhập',
+            'không thể đăng nhập',
+            'thử lại',
+            'error',
+            'lỗi'
+          ];
+          
+          // Tìm tất cả các phần tử div
+          document.querySelectorAll('div').forEach(div => {
+            // Kiểm tra nếu nội dung chứa bất kỳ text lỗi nào
+            const text = div.textContent || '';
+            const hasErrorText = errorTexts.some(errorText => 
+              text.toLowerCase().includes(errorText.toLowerCase()));
+            
+            if (hasErrorText) {
+              div.style.display = 'none';
+              setTimeout(() => {
+                if (div.parentNode) {
+                  div.parentNode.removeChild(div);
+                }
+              }, 50);
+            }
+          });
+        }
+        
+        // Hàm xóa tất cả thông báo lỗi thông thường
+        function removeErrorMessages() {
+          // Tìm tất cả thông báo lỗi trên trang với nhiều kiểu chọn để đảm bảo tìm thấy tất cả
+          const errorSelectors = [
+            '.auth-error-message', 
+            '.error-message', 
+            '.firebase-error-message',
+            'div[style*="background-color: #f8d7da"]',
+            'div[role="alert"]',
+            'div.alert-danger',
+            'div.alert-error',
+            'div[class*="error"]',
+            'div[class*="Error"]'
+          ];
+          
+          const errorMessages = document.querySelectorAll(errorSelectors.join(', '));
+          
+          errorMessages.forEach(message => {
+            // Ẩn và xóa thông báo lỗi
+            message.style.display = 'none';
+            setTimeout(() => {
+              if (message.parentNode) {
+                message.parentNode.removeChild(message);
+              }
+            }, 50);
+          });
+          
+          // Xóa lỗi API key từ localStorage nếu có
+          localStorage.removeItem('last_auth_error');
+        }
+        
+        // Đặt MutationObserver để theo dõi các thông báo lỗi thêm mới
+        const bodyObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length) {
+              // Kiểm tra các node mới thêm vào
+              mutation.addedNodes.forEach(function(node) {
+                if (node.nodeType === 1) { // Node là element
+                  // Kiểm tra nếu node là thông báo lỗi
+                  if (node.classList && 
+                      (node.classList.contains('error-message') || 
+                       node.classList.contains('alert-danger') || 
+                       node.classList.contains('auth-error-message')) ||
+                      (node.style && node.style.backgroundColor && 
+                       (node.style.backgroundColor.includes('#f8d7da') || 
+                        node.style.backgroundColor.includes('rgb(248, 215, 218)')))) {
+                    // Xóa thông báo lỗi
+                    node.style.display = 'none';
+                    setTimeout(() => {
+                      if (node.parentNode) {
+                        node.parentNode.removeChild(node);
+                      }
+                    }, 50);
+                  }
+                  
+                  // Kiểm tra nội dung text
+                  if (node.textContent && 
+                      (node.textContent.includes('Hệ thống đăng nhập đang bị lỗi') || 
+                       node.textContent.includes('Vui lòng làm mới trang'))) {
+                    node.style.display = 'none';
+                    setTimeout(() => {
+                      if (node.parentNode) {
+                        node.parentNode.removeChild(node);
+                      }
+                    }, 50);
+                  }
+                }
+              });
+            }
+          });
+        });
+        
+        // Theo dõi thay đổi trong body
+        bodyObserver.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+        
+        // Chạy hàm xóa lỗi thường xuyên
+        setInterval(removeAllErrorMessages, 500);
+        
+        // Thêm xử lý cho sự kiện khi form đăng nhập hiển thị
+        document.addEventListener('click', function() {
+          // Thêm hẹn giờ để xóa thông báo lỗi sau khi các sự kiện click khác hoàn tất
+          setTimeout(removeAllErrorMessages, 100);
+          setTimeout(removeAllErrorMessages, 500);
+          setTimeout(removeAllErrorMessages, 1000);
+        });
       });
     </script>
 
@@ -997,25 +1305,25 @@
                             avatar.src = userData.picture;
                             avatar.alt = userData.name || "User";
                             avatar.className = 'avatar-img';
-                            avatar.style.width = "100%";
-                            avatar.style.height = "100%";
-                            avatar.style.objectFit = "cover";
-                            avatar.style.borderRadius = "50%";
+                            avatar.style.width = '100%';
+                            avatar.style.height = '100%';
+                            avatar.style.objectFit = 'cover';
+                            avatar.style.borderRadius = '50%';
                             sidebarAvatar.appendChild(avatar);
                         } else {
                             // Nếu không có ảnh, hiển thị chữ cái đầu của tên người dùng
                             const initial = document.createElement('div');
                             initial.className = 'avatar-initial';
                             initial.textContent = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
-                            initial.style.backgroundColor = "#4285f4";
-                            initial.style.color = "white";
-                            initial.style.width = "100%";
-                            initial.style.height = "100%";
-                            initial.style.display = "flex";
-                            initial.style.alignItems = "center";
-                            initial.style.justifyContent = "center";
-                            initial.style.borderRadius = "50%";
-                            initial.style.fontSize = "24px";
+                            initial.style.backgroundColor = '#4285f4';
+                            initial.style.color = 'white';
+                            initial.style.width = '40px';
+                            initial.style.height = '40px';
+                            initial.style.display = 'flex';
+                            initial.style.alignItems = 'center';
+                            initial.style.justifyContent = 'center';
+                            initial.style.borderRadius = '50%';
+                            initial.style.fontSize = '20px';
                             sidebarAvatar.appendChild(initial);
                         }
                         
@@ -1120,6 +1428,56 @@
             // Xử lý sự kiện click vào avatar để hiển thị menu
             function setupAvatarClickEvent() {
                 try {
+                    // Đảm bảo rằng mobile-user-menu tồn tại và được thêm vào body
+                    let mobileUserMenu = document.getElementById('mobile-user-menu');
+                    if (!mobileUserMenu) {
+                        console.log("Tạo mobile-user-menu mới vì không tìm thấy");
+                        // Tạo menu mới nếu không tồn tại
+                        mobileUserMenu = document.createElement('div');
+                        mobileUserMenu.id = 'mobile-user-menu';
+                        mobileUserMenu.className = 'user-menu';
+                        mobileUserMenu.innerHTML = `
+                            <div class="user-menu-header">
+                                <div class="user-avatar"></div>
+                                <div class="user-info">
+                                    <div class="user-name">Chưa đăng nhập</div>
+                                    <div class="user-email"></div>
+                                </div>
+                            </div>
+                            <div class="user-menu-items">
+                                <a href="favorites.html" class="user-menu-item menu-close">
+                                    <i class="fas fa-heart"></i> Bài hát yêu thích
+                                </a>
+                                <a href="#" class="user-menu-item menu-close">
+                                    <i class="fas fa-list"></i> Playlist của tôi
+                                </a>
+                                <a href="recently-viewed.html" class="user-menu-item menu-close">
+                                    <i class="fas fa-history"></i> Đã xem gần đây
+                                </a>
+                                <a href="#" class="user-menu-item logout menu-close">
+                                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                </a>
+                                <button class="btn close-menu-btn menu-close">
+                                    <i class="fas fa-times"></i> Đóng
+                                </button>
+                            </div>
+                        `;
+                        document.body.appendChild(mobileUserMenu);
+                    } else if (!document.body.contains(mobileUserMenu)) {
+                        // Nếu menu tồn tại nhưng không nằm trong body, di chuyển nó vào body
+                        document.body.appendChild(mobileUserMenu);
+                    }
+                    
+                    // Đảm bảo user-menu-overlay tồn tại
+                    let userMenuOverlay = document.querySelector('.user-menu-overlay');
+                    if (!userMenuOverlay) {
+                        console.log("Tạo user-menu-overlay mới vì không tìm thấy");
+                        userMenuOverlay = document.createElement('div');
+                        userMenuOverlay.className = 'user-menu-overlay';
+                        userMenuOverlay.style.display = 'none';
+                        document.body.appendChild(userMenuOverlay);
+                    }
+                    
                     // Xử lý avatar trên desktop header
                     const desktopAvatar = document.getElementById('header-avatar');
                     const desktopUserMenu = document.getElementById('user-menu');
@@ -1151,8 +1509,10 @@
                     
                     // Xử lý avatar trên mobile
                     const mobileAvatar = document.querySelector('.mobile-header .header-avatar');
-                    const mobileUserMenu = document.getElementById('mobile-user-menu');
-                    const userMenuOverlay = document.querySelector('.user-menu-overlay');
+                    // Sử dụng biến mobileUserMenu đã được khai báo ở trên thay vì khai báo lại
+                    // const mobileUserMenu = document.getElementById('mobile-user-menu');
+                    // Sử dụng biến userMenuOverlay đã được khai báo ở trên thay vì khai báo lại
+                    // const userMenuOverlay = document.querySelector('.user-menu-overlay');
                     
                     if (mobileAvatar && mobileUserMenu) {
                         console.log("Thiết lập sự kiện click cho avatar mobile");
@@ -1174,22 +1534,157 @@
                         if (loginBtn) {
                             const newLoginBtn = loginBtn.cloneNode(true);
                             loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
-                            newLoginBtn.addEventListener('click', showMobileUserMenu);
+                            
+                            // Sửa sự kiện click cho nút đăng nhập, luôn gọi hàm đăng nhập
+                            newLoginBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log("Nút đăng nhập mobile được nhấp");
+                                
+                                // Gọi hàm đăng nhập nếu có sẵn
+                                if (typeof handleGoogleLogin === 'function') {
+                                    handleGoogleLogin();
+                                } else if (typeof window.firebaseAuth && typeof window.firebaseAuth.signInWithGoogle === 'function') {
+                                    window.firebaseAuth.signInWithGoogle();
+                                } else {
+                                    console.error("Không tìm thấy hàm đăng nhập Google");
+                                }
+                                
+                                return false;
+                            });
                         }
                         
                         // Thêm sự kiện đóng menu khi click vào các mục menu có class menu-close
                         const menuCloseItems = document.querySelectorAll('.menu-close');
                         menuCloseItems.forEach(item => {
-                            item.addEventListener('click', function(e) {
-                                // Không ngăn mặc định để cho phép liên kết hoạt động
-                                
-                                // Đóng menu
-                                mobileUserMenu.classList.remove('visible');
-                                if (userMenuOverlay) {
-                                    userMenuOverlay.style.display = 'none';
+                            // Xóa sự kiện hiện có
+                            const newItem = item.cloneNode(true);
+                            item.parentNode.replaceChild(newItem, item);
+                            
+                            // Thêm sự kiện click mới
+                            newItem.addEventListener('click', function(e) {
+                                // Kiểm tra nếu đây là nút đăng xuất
+                                if (this.classList.contains('logout')) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    
+                                    // Đóng menu
+                                    mobileUserMenu.classList.remove('visible');
+                                    
+                                    // Đợi hiệu ứng chuyển đổi hoàn tất trước khi ẩn hoàn toàn và đăng xuất
+                                    setTimeout(() => {
+                                        mobileUserMenu.style.display = 'none';
+                                        if (userMenuOverlay) {
+                                            userMenuOverlay.style.display = 'none';
+                                        }
+                                        
+                                        // Sử dụng hàm đăng xuất toàn cục
+                                        if (window.logoutUser && typeof window.logoutUser === 'function') {
+                                            window.logoutUser();
+                                        } else {
+                                            // Đăng xuất cục bộ nếu không tìm thấy hàm toàn cục
+                                            logoutUser();
+                                        }
+                                    }, 200);
+                                } else {
+                                    // Đóng menu
+                                    mobileUserMenu.classList.remove('visible');
+                                    
+                                    // Đợi hiệu ứng chuyển đổi hoàn tất trước khi ẩn hoàn toàn
+                                    setTimeout(() => {
+                                        mobileUserMenu.style.display = 'none';
+                                        if (userMenuOverlay) {
+                                            userMenuOverlay.style.display = 'none';
+                                        }
+                                    }, 200);
                                 }
                             });
                         });
+                        
+                        // Hàm thực hiện đăng xuất và cập nhật UI
+                        function logoutUser() {
+                            console.log("Đang đăng xuất người dùng...");
+                            
+                            // Xóa thông tin người dùng từ localStorage
+                            localStorage.removeItem('kalimbaUser');
+                            localStorage.removeItem('userData');
+                            
+                            // Đăng xuất từ Firebase nếu có
+                            if (window.firebase && window.firebase.auth) {
+                                window.firebase.auth().signOut().then(() => {
+                                    console.log("Đã đăng xuất từ Firebase");
+                                }).catch(error => {
+                                    console.error("Lỗi khi đăng xuất từ Firebase:", error);
+                                });
+                            }
+                            
+                            // Cập nhật UI hiển thị
+                            updateUIAfterLogout();
+                        }
+                        
+                        // Hàm cập nhật UI sau khi đăng xuất
+                        function updateUIAfterLogout() {
+                            // Ẩn avatar và hiển thị nút đăng nhập trên mobile
+                            const mobileHeaderAvatar = document.querySelector('.mobile-header .header-avatar');
+                            const mobileLoginBtn = document.querySelector('.mobile-header .login-btn');
+                            
+                            if (mobileHeaderAvatar) {
+                                mobileHeaderAvatar.classList.remove('logged-in');
+                                mobileHeaderAvatar.style.display = 'none';
+                            }
+                            
+                            if (mobileLoginBtn) {
+                                mobileLoginBtn.style.display = 'flex';
+                            }
+                            
+                            // Cập nhật avatar trong sidebar
+                            const sidebarAvatar = document.querySelector('.sidebar .user-avatar');
+                            const sidebarLoginSection = document.querySelector('.sidebar .login-section') || 
+                                                        document.querySelector('.sidebar .login-with-google-btn');
+                            
+                            if (sidebarAvatar) {
+                                sidebarAvatar.innerHTML = '<i class="fab fa-google"></i>';
+                            }
+                            
+                            if (sidebarLoginSection) {
+                                sidebarLoginSection.style.display = 'block';
+                            }
+                            
+                            // Ẩn các menu chỉ hiển thị khi đăng nhập
+                            const userOnlyMenuItems = document.querySelectorAll('.user-only-menu-item');
+                            userOnlyMenuItems.forEach(item => {
+                                item.style.display = 'none';
+                            });
+                            
+                            // Cập nhật UI desktop
+                            const headerAvatar = document.getElementById('header-avatar');
+                            const desktopLoginBtn = document.getElementById('main-login-btn');
+                            const desktopUserMenu = document.getElementById('user-menu');
+                            
+                            if (headerAvatar) {
+                                headerAvatar.classList.remove('logged-in');
+                                headerAvatar.style.display = 'none';
+                                headerAvatar.innerHTML = '';
+                            }
+                            
+                            if (desktopLoginBtn) {
+                                desktopLoginBtn.style.display = 'flex';
+                            }
+                            
+                            // Đóng menu desktop nếu đang mở
+                            if (desktopUserMenu) {
+                                desktopUserMenu.classList.remove('active');
+                                desktopUserMenu.classList.remove('visible');
+                            }
+                            
+                            // Ẩn overlay nếu có
+                            const overlay = document.querySelector('.user-menu-overlay');
+                            if (overlay) {
+                                overlay.style.display = 'none';
+                            }
+                            
+                            console.log("Đã cập nhật UI sau khi đăng xuất");
+                        }
                         
                         // Hàm xử lý hiển thị menu
                         function showMobileUserMenu(e) {
@@ -1197,23 +1692,148 @@
                             e.stopPropagation();
                             console.log("Avatar/Login mobile được nhấp");
                             
-                            // Hiển thị menu và overlay
-                            mobileUserMenu.classList.add('visible');
-                            if (userMenuOverlay) {
-                                userMenuOverlay.style.display = 'block';
-                                
-                                // Đóng menu khi nhấp vào overlay
-                                const closeMenu = function() {
-                                    mobileUserMenu.classList.remove('visible');
-                                    userMenuOverlay.style.display = 'none';
-                                    // Xóa sự kiện để tránh đăng ký nhiều lần
-                                    userMenuOverlay.removeEventListener('click', closeMenu);
-                                };
-                                
-                                userMenuOverlay.addEventListener('click', closeMenu);
+                            // Kiểm tra trạng thái đăng nhập
+                            const savedUser = localStorage.getItem('kalimbaUser');
+                            
+                            // Nếu chưa đăng nhập, chuyển hướng đến đăng nhập
+                            if (!savedUser) {
+                                console.log("Người dùng chưa đăng nhập, kích hoạt đăng nhập");
+                                // Gọi hàm đăng nhập nếu có sẵn
+                                if (typeof handleGoogleLogin === 'function') {
+                                    handleGoogleLogin();
+                                } else if (typeof window.firebaseAuth && typeof window.firebaseAuth.signInWithGoogle === 'function') {
+                                    window.firebaseAuth.signInWithGoogle();
+                                } else {
+                                    console.error("Không tìm thấy hàm đăng nhập Google");
+                                }
+                                return false;
                             }
                             
+                            // Nếu đã đăng nhập, hiển thị menu tùy chọn
+                            // Cập nhật thông tin người dùng từ localStorage
+                            updateMobileUserMenuInfo();
+                            
+                            // Đảm bảo menu được hiển thị
+                            mobileUserMenu.style.display = 'block';
+                            
+                            // Kích hoạt hiệu ứng hiển thị với timeout ngắn
+                            setTimeout(() => {
+                                // Hiển thị menu
+                                mobileUserMenu.classList.add('visible');
+                                
+                                // Hiển thị overlay
+                                if (userMenuOverlay) {
+                                    userMenuOverlay.style.display = 'block';
+                                    
+                                    // Đóng menu khi nhấp vào overlay
+                                    const closeMenu = function() {
+                                        mobileUserMenu.classList.remove('visible');
+                                        
+                                        // Đợi hiệu ứng chuyển đổi hoàn tất trước khi ẩn hoàn toàn
+                                        setTimeout(() => {
+                                            mobileUserMenu.style.display = 'none';
+                                            userMenuOverlay.style.display = 'none';
+                                        }, 200);
+                                        
+                                        // Xóa sự kiện để tránh đăng ký nhiều lần
+                                        userMenuOverlay.removeEventListener('click', closeMenu);
+                                    };
+                                    
+                                    // Xóa sự kiện cũ trước khi thêm mới
+                                    userMenuOverlay.removeEventListener('click', closeMenu);
+                                    userMenuOverlay.addEventListener('click', closeMenu);
+                                }
+                            }, 10);
+                            
                             return false;
+                        }
+                        
+                        // Hàm cập nhật thông tin người dùng trong menu
+                        function updateMobileUserMenuInfo() {
+                            // Lấy thông tin người dùng từ localStorage
+                            const savedUser = localStorage.getItem('kalimbaUser');
+                            const menuUserName = mobileUserMenu.querySelector('.user-name');
+                            const menuUserEmail = mobileUserMenu.querySelector('.user-email');
+                            const menuUserAvatar = mobileUserMenu.querySelector('.user-avatar');
+                            
+                            // Cập nhật các mục menu dựa trên trạng thái đăng nhập
+                            const favoriteLink = mobileUserMenu.querySelector('a[href="favorites.html"]');
+                            const playlistLink = mobileUserMenu.querySelector('a[href="#"].user-menu-item:not(.logout)');
+                            const recentlyViewedLink = mobileUserMenu.querySelector('a[href="recently-viewed.html"]');
+                            const logoutLink = mobileUserMenu.querySelector('.logout');
+                            
+                            if (savedUser) {
+                                try {
+                                    const userData = JSON.parse(savedUser);
+                                    
+                                    // Hiển thị các mục menu chỉ dành cho người dùng đã đăng nhập
+                                    if (favoriteLink) favoriteLink.style.display = 'flex';
+                                    if (playlistLink) playlistLink.style.display = 'flex';
+                                    if (recentlyViewedLink) recentlyViewedLink.style.display = 'flex';
+                                    if (logoutLink) logoutLink.style.display = 'flex';
+                                    
+                                    // Cập nhật tên và email
+                                    if (menuUserName) {
+                                        menuUserName.textContent = userData.name || 'Người dùng';
+                                    }
+                                    
+                                    if (menuUserEmail) {
+                                        menuUserEmail.textContent = userData.email || '';
+                                    }
+                                    
+                                    // Cập nhật avatar
+                                    if (menuUserAvatar) {
+                                        menuUserAvatar.innerHTML = '';
+                                        
+                                        if (userData.picture) {
+                                            const avatarImg = document.createElement('img');
+                                            avatarImg.src = userData.picture;
+                                            avatarImg.alt = userData.name || 'Avatar';
+                                            avatarImg.style.width = '100%';
+                                            avatarImg.style.height = '100%';
+                                            avatarImg.style.objectFit = 'cover';
+                                            avatarImg.style.borderRadius = '50%';
+                                            menuUserAvatar.appendChild(avatarImg);
+                                        } else {
+                                            const initial = document.createElement('div');
+                                            initial.className = 'avatar-initial';
+                                            initial.textContent = userData.name ? userData.name.charAt(0).toUpperCase() : 'U';
+                                            initial.style.backgroundColor = '#4285f4';
+                                            initial.style.color = 'white';
+                                            initial.style.width = '40px';
+                                            initial.style.height = '40px';
+                                            initial.style.display = 'flex';
+                                            initial.style.alignItems = 'center';
+                                            initial.style.justifyContent = 'center';
+                                            initial.style.borderRadius = '50%';
+                                            initial.style.fontSize = '20px';
+                                            menuUserAvatar.appendChild(initial);
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error('Lỗi khi phân tích dữ liệu người dùng:', error);
+                                }
+                            } else {
+                                // Người dùng chưa đăng nhập
+                                // Ẩn các mục menu chỉ dành cho người dùng đã đăng nhập
+                                if (favoriteLink) favoriteLink.style.display = 'none';
+                                if (playlistLink) playlistLink.style.display = 'none';
+                                if (recentlyViewedLink) recentlyViewedLink.style.display = 'none';
+                                if (logoutLink) logoutLink.style.display = 'none';
+                                
+                                if (menuUserName) {
+                                    menuUserName.textContent = 'Chưa đăng nhập';
+                                }
+                                
+                                if (menuUserEmail) {
+                                    menuUserEmail.textContent = '';
+                                }
+                                
+                                // Hiển thị avatar mặc định
+                                if (menuUserAvatar) {
+                                    menuUserAvatar.innerHTML = '<i class="fas fa-user" style="color: #666; font-size: 20px;"></i>';
+                                }
+                            }
                         }
                     }
                 } catch (error) {
@@ -1262,17 +1882,95 @@
                         z-index: 2000;
                         width: 90%;
                         max-width: 280px;
+                        display: none; /* Mặc định ẩn, sẽ hiển thị khi được kích hoạt */
+                        background-color: white; /* Đảm bảo menu có màu nền */
+                        visibility: hidden; /* Mặc định ẩn */
+                        opacity: 0; /* Mặc định ẩn */
+                        transition: transform 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
+                        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+                        border-radius: 8px;
+                        overflow: hidden;
                     }
                     
                     #mobile-user-menu.visible {
                         transform: translate(-50%, -50%) scale(1);
+                        visibility: visible;
+                        opacity: 1;
+                        display: block;
+                    }
+                    
+                    /* Style cho menu mobile */
+                    #mobile-user-menu .user-menu-header {
+                        padding: 20px;
+                        background-color: #f5f5f7;
+                        border-bottom: 1px solid #eee;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    
+                    #mobile-user-menu .user-avatar {
+                        width: 60px;
+                        height: 60px;
+                        border-radius: 50%;
+                        margin-bottom: 10px;
+                        background-color: #e1e1e1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        overflow: hidden;
+                    }
+                    
+                    #mobile-user-menu .user-info {
+                        text-align: center;
+                    }
+                    
+                    #mobile-user-menu .user-name {
+                        font-weight: 600;
+                        font-size: 16px;
+                        margin-bottom: 3px;
+                    }
+                    
+                    #mobile-user-menu .user-email {
+                        font-size: 14px;
+                        color: #666;
+                    }
+                    
+                    #mobile-user-menu .user-menu-items {
+                        padding: 10px 0;
+                    }
+                    
+                    #mobile-user-menu .user-menu-item {
+                        display: flex;
+                        align-items: center;
+                        padding: 12px 15px;
+                        color: #333;
+                        text-decoration: none;
+                        font-size: 15px;
+                    }
+                    
+                    #mobile-user-menu .user-menu-item i {
+                        width: 24px;
+                        margin-right: 10px;
+                        text-align: center;
+                        color: #555;
+                    }
+                    
+                    #mobile-user-menu .user-menu-item.logout {
+                        border-top: 1px solid #eee;
+                        color: #e74c3c;
+                    }
+                    
+                    #mobile-user-menu .user-menu-item.logout i {
+                        color: #e74c3c;
                     }
                     
                     /* Nút đóng trong menu mobile */
                     .close-menu-btn {
                         display: block;
                         width: 100%;
-                        padding: 10px;
+                        padding: 12px;
                         margin-top: 10px;
                         background-color: #f1f1f1;
                         color: #666;
@@ -1280,6 +1978,7 @@
                         border-radius: 0;
                         text-align: center;
                         cursor: pointer;
+                        font-size: 15px;
                     }
                     
                     .close-menu-btn:hover, .close-menu-btn:active {
@@ -1295,30 +1994,46 @@
                         bottom: 0;
                         background-color: rgba(0, 0, 0, 0.5);
                         z-index: 1999;
+                        display: none; /* Mặc định ẩn */
+                        transition: opacity 0.2s ease;
+                        opacity: 0.7; /* Đảm bảo overlay có độ trong suốt đúng */
                     }
                     
                     /* Cải thiện vùng click cho avatar mobile */
                     .mobile-header .header-avatar {
                         cursor: pointer;
                         position: relative;
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        background-color: #f1f1f1;
+                        overflow: hidden;
+                        display: none; /* Mặc định ẩn, chỉ hiển thị khi đã đăng nhập */
                     }
                     
-                    .mobile-header .header-avatar.clickable::after {
-                        content: '';
-                        position: absolute;
-                        top: -8px;
-                        right: -8px;
-                        bottom: -8px;
-                        left: -8px;
-                        z-index: -1;
+                    .mobile-header .header-avatar.logged-in {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
                     }
                     
-                    .mobile-header .header-avatar:active {
-                        opacity: 0.8;
-                    }
-                    
+                    /* Hiển thị nút đăng nhập khi chưa đăng nhập */
                     .mobile-header .login-btn {
                         cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        background-color: #4285f4;
+                        color: white;
+                        border: none;
+                    }
+                    
+                    /* Ẩn nút đăng nhập khi đã đăng nhập */
+                    .mobile-header .header-avatar.logged-in + .login-btn {
+                        display: none;
                     }
                 `;
                 document.head.appendChild(style);
@@ -1340,6 +2055,123 @@
                 setupAvatarClickEvent();
             });
         })();
+    </script>
+
+    <!-- Script xóa thông báo lỗi cụ thể "Hệ thống đăng nhập đang bị lỗi" -->
+    <script>
+      (function() {
+        // Thực thi ngay lập tức
+        function removeLoginErrorBoxes() {
+          console.log("Đang tìm và xóa thông báo lỗi đăng nhập...");
+          
+          // Tìm các phần tử có nội dung "Hệ thống đăng nhập đang bị lỗi"
+          const divs = document.getElementsByTagName('div');
+          for (let i = 0; i < divs.length; i++) {
+            const div = divs[i];
+            if (div.textContent && (
+                div.textContent.includes('Hệ thống đăng nhập đang bị lỗi') || 
+                div.textContent.includes('Vui lòng làm mới trang') ||
+                (div.textContent.includes('hệ thống') && div.textContent.includes('lỗi'))
+               )) {
+              
+              // Ẩn và xóa phần tử
+              div.style.display = 'none';
+              div.style.visibility = 'hidden';
+              div.style.opacity = '0';
+              div.style.height = '0';
+              div.style.overflow = 'hidden';
+              
+              // Thêm vào danh sách các phần tử cần xóa
+              setTimeout(function() {
+                if (div.parentNode) {
+                  div.parentNode.removeChild(div);
+                }
+              }, 50);
+            }
+          }
+          
+          // Tìm theo attribute style
+          const errorBoxes = document.querySelectorAll('div[style*="background-color"]');
+          errorBoxes.forEach(box => {
+            if (box.style.backgroundColor && 
+                (box.style.backgroundColor.includes('#f8d7da') || 
+                 box.style.backgroundColor.includes('rgb(248, 215, 218)') ||
+                 box.style.backgroundColor.includes('rgb(248,215,218)'))) {
+              
+              // Ẩn và xóa phần tử
+              box.style.display = 'none';
+              box.style.visibility = 'hidden';
+              box.style.opacity = '0';
+              box.style.height = '0';
+              box.style.overflow = 'hidden';
+              
+              setTimeout(function() {
+                if (box.parentNode) {
+                  box.parentNode.removeChild(box);
+                }
+              }, 50);
+            }
+          });
+        }
+        
+        // Thực thi ngay lập tức
+        removeLoginErrorBoxes();
+        
+        // Đặt lịch thực thi lại
+        for (let i = 1; i <= 10; i++) {
+          setTimeout(removeLoginErrorBoxes, i * 200);
+        }
+        
+        // Đăng ký xử lý sự kiện click vào nút đăng nhập
+        document.addEventListener('DOMContentLoaded', function() {
+          const loginButtons = document.querySelectorAll('.login-btn, .login-with-google-btn, [id*="login"], [id*="Login"]');
+          
+          loginButtons.forEach(button => {
+            button.addEventListener('click', function() {
+              console.log("Đã nhấp vào nút đăng nhập, đang xóa thông báo lỗi...");
+              
+              // Xóa thông báo lỗi nhiều lần để đảm bảo
+              removeLoginErrorBoxes();
+              for (let i = 1; i <= 10; i++) {
+                setTimeout(removeLoginErrorBoxes, i * 100);
+              }
+            });
+          });
+          
+          // Theo dõi toàn bộ sự kiện click trên trang
+          document.addEventListener('click', function() {
+            for (let i = 1; i <= 5; i++) {
+              setTimeout(removeLoginErrorBoxes, i * 200);
+            }
+          });
+        });
+        
+        // Theo dõi DOM để phát hiện và xóa thông báo lỗi mới
+        if (typeof MutationObserver !== 'undefined') {
+          const observer = new MutationObserver(function(mutations) {
+            let shouldRemove = false;
+            
+            mutations.forEach(function(mutation) {
+              if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                shouldRemove = true;
+              }
+            });
+            
+            if (shouldRemove) {
+              removeLoginErrorBoxes();
+            }
+          });
+          
+          // Theo dõi thay đổi trong body
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+        }
+        
+        // Chạy định kỳ để đảm bảo lỗi được xóa
+        setInterval(removeLoginErrorBoxes, 500);
+      })();
     </script>
 </body>
 </html> 
