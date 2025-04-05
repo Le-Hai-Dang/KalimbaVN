@@ -367,6 +367,19 @@ function updateUIAfterLogin(userData) {
             document.head.appendChild(script);
         }
     }
+
+    // Kiểm tra quyền admin và hiển thị menu admin nếu là admin
+    if (window.AdminAuth && typeof window.AdminAuth.showAdminMenuItem === 'function') {
+        console.log('Kiểm tra quyền admin sau khi đăng nhập...');
+        setTimeout(() => {
+            window.AdminAuth.showAdminMenuItem();
+        }, 500);
+        
+        // Kiểm tra lại sau 2 giây để đảm bảo
+        setTimeout(() => {
+            window.AdminAuth.showAdminMenuItem();
+        }, 2000);
+    }
 }
 
 /**
